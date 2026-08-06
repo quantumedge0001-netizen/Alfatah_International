@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import ImportForm from "@/components/ImportForm";
 
 export default async function NewImportPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: products } = await supabase.from("products").select("id, name").order("name");
 
   return (

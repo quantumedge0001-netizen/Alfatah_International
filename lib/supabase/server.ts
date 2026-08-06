@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import type { Database } from "@/lib/types";
 
 // Use inside Server Components, Server Actions, and Route Handlers only.
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

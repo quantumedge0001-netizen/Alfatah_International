@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import SalesForm from "@/components/SalesForm";
 
 export default async function NewSalePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const [{ data: institutions }, { data: products }] = await Promise.all([
     supabase.from("government_institutions").select("id, name, district").order("name"),
     supabase.from("products").select("id, name").order("name"),
