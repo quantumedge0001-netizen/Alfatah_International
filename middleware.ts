@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const path = request.nextUrl.pathname;
 
-  const isPublic = path === "/login" || path.startsWith("/_next") || path.startsWith("/manifest");
+  const isPublic = path === "/login" || path === "/signup" || path.startsWith("/_next") || path.startsWith("/manifest");
 
   if (!user && !isPublic) {
     const loginUrl = new URL("/login", request.url);
