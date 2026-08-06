@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --line: #d7dcd6;
+}
+
+body {
+  background-color: #e9edea;
+  color: #141f27;
+}
+
+.status-pill {
+  @apply inline-block rounded-full px-2.5 py-1 text-[10.5px] font-mono font-semibold tracking-wide;
+}
+.status-pill.delivered { @apply bg-[#e4efe8] text-success; }
+.status-pill.dispatched,
+.status-pill.pending { @apply bg-[#f2e9dc] text-brass; }
+.status-pill.review { @apply bg-[#f3e0dd] text-stamp; }
