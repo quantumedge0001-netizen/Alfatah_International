@@ -21,6 +21,35 @@ export async function signIn(_prevState: { error: string | null }, formData: For
   redirect("/dashboard");
 }
 
+export async function signUp(_prevState: { error: string | null }, formData: FormData) {
+  const name = String(formData.get("name") || "");
+  const email = String(formData.get("email") || "");
+  const password = String(formData.get("password") || "");
+
+  if (!name || !email || !password) {
+    return { error: "Name, email and password are required." };
+  }
+
+  if (password.length < 6) {
+    return { error: "Password must be at least 6 characters." };
+  }
+
+  const supabase = createClient();
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: name },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/login");
+}
+
 export async function signOut() {
   const supabase = createClient();
   await supabase.auth.signOut();

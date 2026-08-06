@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { useActionState } from "react";
-import { signIn } from "@/lib/actions/auth";
+import { signUp } from "@/lib/actions/auth";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -12,18 +12,18 @@ function SubmitButton() {
       disabled={pending}
       className="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-white transition hover:bg-ink2 disabled:opacity-60"
     >
-      {pending ? "Signing in…" : "Sign in"}
+      {pending ? "Creating account…" : "Sign up"}
     </button>
   );
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [state, formAction] = useActionState<{ error: string | null }, FormData>(
-    signIn,
-    { error: null }
-  );
+  signUp,
+  { error: null }
+);
 
-  return (
+    return (
     <main className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm rounded-xl border border-line bg-card p-8 shadow-sm">
         <div className="mb-8 text-center">
@@ -31,10 +31,23 @@ export default function LoginPage() {
             M
           </div>
           <h1 className="font-display text-lg font-semibold text-ink">Membrane Mart</h1>
-          <p className="mt-1 text-xs text-muted">Import &amp; Government Sales Platform</p>
+          <p className="mt-1 text-xs text-muted">Create your account</p>
         </div>
 
         <form action={formAction} className="space-y-4">
+          <div>
+            <label htmlFor="name" className="mb-1 block text-xs font-medium text-muted">
+              Full name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-ink"
+              placeholder="Your name"
+            />
+          </div>
           <div>
             <label htmlFor="email" className="mb-1 block text-xs font-medium text-muted">
               Email
@@ -57,6 +70,7 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
+              minLength={6}
               className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-ink"
               placeholder="••••••••"
             />
@@ -70,13 +84,9 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-[11px] text-muted">
-          Accounts are created by your Admin or Super Admin. Contact them for access.
-        </p>
-
-        <p className="mt-3 text-center text-xs text-muted">
-          Don&apos;t have an account?{" "}
-          <a href="/signup" className="font-medium text-ink underline underline-offset-2">
-            Sign up
+          Already have an account?{" "}
+          <a href="/login" className="font-medium text-ink underline underline-offset-2">
+            Sign in
           </a>
         </p>
       </div>
