@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import RegisterSW from "@/components/RegisterSW";
+import { NotificationProvider } from "@/components/Notification";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -33,8 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable}`}>
       <body className="font-body text-sm">
-        {children}
-        <RegisterSW />
+        <NotificationProvider>
+          {children}
+          <RegisterSW />
+        </NotificationProvider>
       </body>
     </html>
   );
