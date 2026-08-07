@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function UsersPage() {
   const profile = await requireProfile();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // RLS already scopes this to the caller's own region for Admins.
   let query = supabase.from("profiles").select("id, full_name, email, role, status, regions(name)").order("full_name");

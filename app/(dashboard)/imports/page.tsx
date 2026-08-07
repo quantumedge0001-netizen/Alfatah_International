@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ImportsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: imports } = await supabase
     .from("imports")
     .select("id, supplier, country, quantity, total_cost, currency, import_date, products(name), regions(name)")

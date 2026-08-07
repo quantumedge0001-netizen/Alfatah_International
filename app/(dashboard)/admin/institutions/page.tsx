@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export default async function InstitutionsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: institutions } = await supabase
     .from("government_institutions")
     .select("id, name, district, contact_info")
@@ -36,4 +36,4 @@ export default async function InstitutionsPage() {
       </div>
     </div>
   );
-}
+} 

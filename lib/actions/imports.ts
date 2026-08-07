@@ -30,7 +30,7 @@ export async function createImport(_prevState: { error: string | null }, formDat
   }
 
   const { quantity, unit_cost } = parsed.data;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from("imports").insert({
     ...parsed.data,

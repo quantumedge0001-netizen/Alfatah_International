@@ -7,7 +7,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   let regionName: string | undefined;
   if (profile.region_id) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.from("regions").select("name").eq("id", profile.region_id).single();
     regionName = data?.name;
   }

@@ -1,33 +1,6 @@
-"use server";
-
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import type { Profile } from "@/lib/types";
-
-export async function signIn(
-  _prevState: { error: string | null },
-  formData: FormData
-): Promise<{ error: string | null }> {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error("[signIn] auth error:", error.message);
-    return { error: error.message };
-  }
-
-  // IMPORTANT: redirect() must stay OUTSIDE any try/catch.
-  // It throws a special NEXT_REDIRECT internally — if a catch block
-  // swallows that throw, the redirect silently never happens.
-  redirect("/dashboard");
-}
+import { redirect } from "next/navigation";
 
 // Fetches the signed-in user's profile row (role + region_id).
 // Redirects to /login if there is no session.
@@ -46,8 +19,6 @@ export async function requireProfile(): Promise<Profile> {
     redirect("/login");
   }
 
-  console.log("[requireProfile] looking up profile for user.id:", user.id);
-
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
@@ -55,6 +26,8 @@ export async function requireProfile(): Promise<Profile> {
     .single();
 
   if (error) {
+    // Don't swallow this silently — log it so you can tell
+    // "RLS denied" apart from "row genuinely missing".
     console.error("[requireProfile] profile fetch error:", error.message, error.code);
     redirect("/login");
   }

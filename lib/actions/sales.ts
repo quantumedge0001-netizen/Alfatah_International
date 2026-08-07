@@ -27,7 +27,7 @@ export async function createSale(_prevState: { error: string | null }, formData:
   }
 
   const { quantity, unit_price } = parsed.data;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { error } = await supabase.from("sales").insert({
     ...parsed.data,

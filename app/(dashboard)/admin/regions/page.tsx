@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 export default async function RegionsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: regions } = await supabase
     .from("regions")
     .select("id, name, created_at, profiles(count)")

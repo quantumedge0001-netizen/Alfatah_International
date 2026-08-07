@@ -4,7 +4,7 @@ import KpiCard from "@/components/KpiCard";
 
 export default async function DashboardPage() {
   const profile = await requireProfile();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // RLS does the regional filtering here — Super Admin sees every row,
   // Admin/User only see rows where region_id = their own region.
