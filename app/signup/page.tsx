@@ -1,8 +1,10 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/actions/auth";
+import { useNotification } from "@/components/Notification";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -18,10 +20,24 @@ function SubmitButton() {
 }
 
 export default function SignupPage() {
-  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
+  const [state, formAction] = useActionState<{ error: string | null; success?: boolean }, FormData>(
   signUp,
   { error: null }
 );
+  const { notify } = useNotification();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state?.success) return;
+    notify({
+      type: "success",
+      title: "Account created",
+      message: "Taking you to sign in…",
+    });
+    const timer = setTimeout(() => router.push("/login"), 1200);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.success]);
 
     return (
     <main className="flex min-h-screen items-center justify-center bg-paper px-4">

@@ -1,8 +1,10 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/actions/auth";
+import { useNotification } from "@/components/Notification";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -18,10 +20,24 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
+  const [state, formAction] = useActionState<{ error: string | null; success?: boolean }, FormData>(
     signIn,
     { error: null }
   );
+  const { notify } = useNotification();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!state?.success) return;
+    notify({
+      type: "success",
+      title: "Login successful",
+      message: "Taking you to your dashboard…",
+    });
+    const timer = setTimeout(() => router.push("/dashboard"), 1100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state?.success]);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0b14] px-4 py-10 sm:px-6">

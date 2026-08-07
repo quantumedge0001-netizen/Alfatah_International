@@ -3,7 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function signIn(_prevState: { error: string | null }, formData: FormData) {
+export async function signIn(
+  _prevState: { error: string | null; success?: boolean },
+  formData: FormData
+) {
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
 
@@ -18,10 +21,13 @@ export async function signIn(_prevState: { error: string | null }, formData: For
     return { error: "Incorrect email or password." };
   }
 
-  redirect("/dashboard");
+  return { error: null, success: true };
 }
 
-export async function signUp(_prevState: { error: string | null }, formData: FormData) {
+export async function signUp(
+  _prevState: { error: string | null; success?: boolean },
+  formData: FormData
+) {
   const name = String(formData.get("name") || "");
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
@@ -47,7 +53,7 @@ export async function signUp(_prevState: { error: string | null }, formData: For
     return { error: error.message };
   }
 
-  redirect("/login");
+  return { error: null, success: true };
 }
 
 export async function signOut() {
