@@ -23,7 +23,10 @@ export default function SalesForm({
   institutions: { id: string; name: string; district: string }[];
   products: { id: string; name: string }[];
 }) {
-  const [state, formAction] = useFormState(createSale, { error: null });
+  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
+    createSale,
+    { error: null }
+  );
 
   return (
     <form action={formAction} className="space-y-4 rounded-xl border border-line bg-card p-6">

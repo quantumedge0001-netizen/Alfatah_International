@@ -17,7 +17,10 @@ function SubmitButton() {
 }
 
 export default function ImportForm({ products }: { products: { id: string; name: string }[] }) {
-  const [state, formAction] = useFormState(createImport, { error: null });
+  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
+    createImport,
+    { error: null }
+  );
 
   return (
     <form action={formAction} className="space-y-4 rounded-xl border border-line bg-card p-6">
