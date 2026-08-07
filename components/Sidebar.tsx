@@ -7,6 +7,7 @@ import {
   Ship,
   Boxes,
   Landmark,
+  Store,
   Users,
   Building2,
   MapPin,
@@ -63,6 +64,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         <NavLink href="/imports" label="Import Register" icon={Ship} collapsed={collapsed} />
         <NavLink href="/inventory" label="Inventory" icon={Boxes} collapsed={collapsed} />
         <NavLink href="/sales" label="Government Sales" icon={Landmark} collapsed={collapsed} />
+        <NavLink href="/private-sales" label="Private Sales" icon={Store} collapsed={collapsed} />
 
         {profile.role !== "user" && (
           <>
