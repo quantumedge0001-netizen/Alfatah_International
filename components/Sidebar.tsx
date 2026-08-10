@@ -4,12 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   LayoutDashboard,
+  Inbox,
   Ship,
   Boxes,
   Landmark,
-  Store,
   Users,
   Building2,
+  Briefcase,
   MapPin,
   ChevronsLeft,
   ChevronsRight,
@@ -61,10 +62,11 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
 
       <nav className="flex-1 space-y-0.5">
         <NavLink href="/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} />
+        <NavLink href="/leads" label="Leads" icon={Inbox} collapsed={collapsed} />
         <NavLink href="/imports" label="Import Register" icon={Ship} collapsed={collapsed} />
         <NavLink href="/inventory" label="Inventory" icon={Boxes} collapsed={collapsed} />
         <NavLink href="/sales" label="Government Sales" icon={Landmark} collapsed={collapsed} />
-        <NavLink href="/private-sales" label="Private Sales" icon={Store} collapsed={collapsed} />
+        <NavLink href="/private-sales" label="Private Sales" icon={Briefcase} collapsed={collapsed} />
 
         {profile.role !== "user" && (
           <>
@@ -76,6 +78,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
             {collapsed && <div className="my-3 border-t border-white/10" />}
             <NavLink href="/admin/users" label="Users" icon={Users} collapsed={collapsed} />
             <NavLink href="/admin/institutions" label="Institutions" icon={Building2} collapsed={collapsed} />
+            <NavLink href="/admin/private-companies" label="Private Companies" icon={Briefcase} collapsed={collapsed} />
           </>
         )}
         {profile.role === "super_admin" && (

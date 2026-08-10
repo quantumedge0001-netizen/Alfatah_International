@@ -1,43 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { createPrivateSale } from "@/lib/actions/privateSales";
+import { useFormState, useFormStatus } from "react-dom";
+import { createPrivateSale } from "@/lib/actions/private-sales";
 
-type Company = { id: string; name: string; city?: string | null };
-type Product = { id: string; name: string };
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-white hover:bg-ink2 disabled:opacity-60"
+    >
+      {pending ? "Saving…" : "Save Sale"}
+    </button>
+  );
+}
 
 export default function PrivateSalesForm({
   companies,
   products,
 }: {
-  companies: Company[];
-  products: Product[];
+  companies: { id: string; name: string; city: string | null }[];
+  products: { id: string; name: string }[];
 }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSubmit(formData: FormData) {
-    setLoading(true);
-    setError(null);
-    const result = await createPrivateSale(formData);
-    setLoading(false);
-    if (result?.error) {
-      setError(result.error);
-    }
-  }
+  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
+    createPrivateSale,
+    { error: null }
+  );
 
   return (
-    <form action={handleSubmit} className="rounded-xl border border-black/5 bg-white p-8 shadow-sm">
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Private company
-          </label>
-          <select
-            name="company_id"
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
+    <form action={formAction} className="space-y-4 rounded-xl border border-line bg-card p-6">
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Private company">
+          <select name="company_id" required className="input">
             <option value="">Select company</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
@@ -46,15 +41,9 @@ export default function PrivateSalesForm({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Product</label>
-          <select
-            name="product_id"
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
+        </Field>
+        <Field label="Product">
+          <select name="product_id" required className="input">
             <option value="">Select product</option>
             {products.map((p) => (
               <option key={p.id} value={p.id}>
@@ -62,66 +51,39 @@ export default function PrivateSalesForm({
               </option>
             ))}
           </select>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Quantity sold</label>
-          <input
-            type="number"
-            name="quantity_sold"
-            min={1}
-            step="any"
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Unit price</label>
-          <input
-            type="number"
-            name="unit_price"
-            min={0}
-            step="any"
-            required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Sale date</label>
-          <input
-            type="date"
-            name="sale_date"
-            required
-            defaultValue={new Date().toISOString().slice(0, 10)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Delivery status</label>
-          <select
-            name="delivery_status"
-            defaultValue="pending"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-          >
+        </Field>
+        <Field label="Quantity sold">
+          <input name="quantity_sold" type="number" min="1" required className="input" />
+        </Field>
+        <Field label="Unit price">
+          <input name="unit_price" type="number" min="0" step="0.01" required className="input" />
+        </Field>
+        <Field label="Sale date">
+          <input name="sale_date" type="date" required className="input" />
+        </Field>
+        <Field label="Delivery status">
+          <select name="delivery_status" required defaultValue="pending" className="input">
             <option value="pending">Pending</option>
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
           </select>
-        </div>
+        </Field>
       </div>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {state?.error && <p className="rounded-md bg-[#f3e0dd] px-3 py-2 text-xs text-stamp">{state.error}</p>}
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-6 rounded-lg bg-black px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-      >
-        {loading ? "Saving..." : "Save Sale"}
-      </button>
+      <SubmitButton />
+
+      <style>{`.input { width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13px; background: white; }`}</style>
     </form>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      {children}
+    </label>
   );
 }

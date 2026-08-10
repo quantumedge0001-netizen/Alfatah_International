@@ -95,6 +95,75 @@ and sales list + create flows, inventory view, and the full RLS-backed schema.
 - App icons in `public/icons/` (referenced by `manifest.json` — add your own 192×192 and
   512×512 PNGs).
 
+## AF-DOS Phase 1 — Lead / Webhook / Automation backbone
+
+Added on top of the existing scaffold, per the AF-DOS backend prompt. Nothing
+below touches `imports`, `sales`, `inventory`, `profiles`, or the two
+pre-existing lead tables (`"Al Fatah Leads Ad Data"`, `leads_calling_list`) —
+those are untouched and still readable exactly as before.
+
+### What's new
+
+```
+app/api/webhooks/meta/route.ts     Meta Lead Ads webhook (GET verify, POST receive)
+lib/integrations/meta/             types.ts, verify.ts (HMAC + challenge), client.ts (Graph API), leads.ts (adapter)
+lib/services/lead.service.ts       canonical upsert, dedup on (source, external_id)
+lib/services/automation.service.ts NEW_LEAD event bus; assignLead() is a TODO stub
+lib/services/notification.service.ts  channel-agnostic; only in_app is wired up
+lib/services/audit.service.ts      append-only audit_logs writer
+lib/supabase/service.ts            service-role client — server/webhook code only
+supabase/migrations/0003_leads_webhooks.sql   leads, webhook_events, lead_sources, notifications, audit_logs
+```
+
+### Setup
+
+1. Run the new migration in the Supabase SQL editor, after `0001` and `0002`:
+   - `supabase/migrations/0003_leads_webhooks.sql`
+2. Add to `.env.local` (see updated `.env.example`):
+   ```
+   SUPABASE_SERVICE_ROLE_KEY=...
+   META_APP_SECRET=...
+   META_ACCESS_TOKEN=...       # Page access token with leads_retrieval permission
+   META_VERIFY_TOKEN=...       # any random string you choose
+   ```
+3. `npm install` then `npm run build` to confirm it compiles against your actual `node_modules` — this was written and reviewed without a network-connected sandbox, so it hasn't been run through `tsc` yet. Report back any type errors and I'll fix them immediately.
+
+### Registering the webhook with Meta
+
+In your Meta App dashboard → Webhooks → Page → Callback URL:
+`https://<your-vercel-domain>/api/webhooks/meta`, Verify Token = your `META_VERIFY_TOKEN`.
+Subscribe to the `leadgen` field.
+
+### Local testing (before going live with Meta)
+
+Signature verification means you can't just `curl` a fake payload — it'll get
+a 401 by design. To test the pipeline locally:
+
+1. Temporarily comment out the `verifyMetaSignature` check in
+   `app/api/webhooks/meta/route.ts` (or export a test-only flag) — **do not
+   ship that change**, it's local-only.
+2. POST a body shaped like `MetaWebhookEnvelope` (see `lib/integrations/meta/types.ts`)
+   to `http://localhost:3000/api/webhooks/meta`.
+3. Since `fetchMetaLeadDetail` calls the real Graph API, either use a real
+   `leadgen_id` + valid `META_ACCESS_TOKEN` from a Meta test lead, or
+   temporarily stub `fetchMetaLeadDetail` to return a fixture `MetaLeadDetail`.
+4. Check `webhook_events` and `leads` tables in Supabase to confirm the row landed.
+5. POST the exact same body again — confirm no duplicate row is created and
+   the webhook_events row for that leadgen_id is untouched (idempotency check).
+
+### What's intentionally NOT done yet (waiting on your decisions)
+
+- **Lead assignment** (`assignLead()` in `automation.service.ts`) — left as a
+  documented no-op. No rule was defined, so it doesn't guess one.
+- **Email/Telegram/WhatsApp notifications** — `notification.service.ts` writes
+  the `notifications` row (so `in_app` works end-to-end) but does not call any
+  external API, since no credentials exist in this repo yet.
+- **Migrating old rows** from `"Al Fatah Leads Ad Data"` / `leads_calling_list`
+  into the new `leads` table — not done automatically; those tables are left
+  as-is until you decide whether/how to backfill.
+- **Automated tests** (Phase 14 of the prompt) — not included in this pass;
+  next step once Phase 1 is confirmed working.
+
 ## Roadmap (from the design doc)
 
 | Phase | Deliverables |

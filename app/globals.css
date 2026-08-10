@@ -18,3 +18,35 @@ body {
 .status-pill.dispatched,
 .status-pill.pending { @apply bg-[#f2e9dc] text-brass; }
 .status-pill.review { @apply bg-[#f3e0dd] text-stamp; }
+
+/* Lead statuses (leads.status) */
+.status-pill.new { @apply bg-[#dfe7f2] text-[#2f5aa3]; }
+.status-pill.contacted,
+.status-pill.qualified { @apply bg-[#f2e9dc] text-brass; }
+.status-pill.quoted { @apply bg-[#e6e0f2] text-[#5a3fa3]; }
+.status-pill.won { @apply bg-[#e4efe8] text-success; }
+.status-pill.lost,
+.status-pill.cancelled { @apply bg-[#f3e0dd] text-stamp; }
+
+/* Notification toast animations — see components/Notification */
+@keyframes notification-slide-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes notification-slide-out {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(12px) scale(0.98); }
+}
+.notification-toast-in {
+  animation: notification-slide-in 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.notification-toast-out {
+  animation: notification-slide-out 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes notification-progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+.notification-progress { animation: notification-progress linear forwards; }
+.notification-toast:hover .notification-progress { animation-play-state: paused; }

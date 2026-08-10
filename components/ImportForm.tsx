@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom";
 import { createImport } from "@/lib/actions/imports";
 
 function SubmitButton() {
@@ -18,7 +17,7 @@ function SubmitButton() {
 }
 
 export default function ImportForm({ products }: { products: { id: string; name: string }[] }) {
-  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
+  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
     createImport,
     { error: null }
   );

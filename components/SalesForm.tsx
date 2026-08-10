@@ -1,7 +1,6 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { createSale } from "@/lib/actions/sales";
 
 function SubmitButton() {
@@ -24,7 +23,7 @@ export default function SalesForm({
   institutions: { id: string; name: string; district: string }[];
   products: { id: string; name: string }[];
 }) {
-  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
+  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
     createSale,
     { error: null }
   );
