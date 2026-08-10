@@ -1,9 +1,10 @@
 // app/api/webhooks/meta/route.ts
 //
 // Keep this route THIN (context doc section 15 — "keep receiver minimal;
-// background processing" for the Vercel timeout concern). It does three
-// things only: verify -> acknowledge -> hand off. All business logic
-// lives in lib/services/*.
+// background processing" for the Vercel timeout concern). It does:
+// verify -> log raw event (idempotency) -> fetch/normalize -> hand off to
+// lead.service.ts. All business logic (dedup-by-lead, assignment,
+// notification, audit) lives in the existing services.
 //
 // Two HTTP methods:
 //   GET  — Meta's one-time webhook subscription verification challenge.
@@ -13,11 +14,9 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchMetaLead, normalizeMetaLead } from "@/lib/integrations/meta/leads";
-import {
-  logWebhookEvent,
-  markWebhookEventStatus,
-  upsertCanonicalLead,
-} from "@/lib/services/lead-ingestion.service";
+import { processCanonicalLead } from "@/lib/services/lead.service";
+import { recordAudit } from "@/lib/services/audit.service";
+import type { Json } from "@/lib/types";
 
 // --- GET: Meta subscription verification -----------------------------------
 // https://developers.facebook.com/docs/graph-api/webhooks/getting-started#verification-requests
@@ -60,9 +59,9 @@ export async function POST(req: NextRequest) {
 
   for (const change of leadgenChanges) {
     // Fire-and-continue per entry; log and move on. We still return 200
-    // overall so Meta doesn't endlessly retry the whole batch for one
-    // bad entry (that entry is captured in webhook_events with status
-    // 'failed' for manual follow-up instead).
+    // overall so Meta doesn't endlessly retry the whole batch for one bad
+    // entry (that entry is captured in webhook_events with status 'failed'
+    // for manual follow-up instead).
     await processLeadgenChange(supabase, change).catch((err) => {
       console.error("processLeadgenChange failed", { change, err });
     });
@@ -87,7 +86,7 @@ interface MetaWebhookBody {
 
 interface LeadgenChange {
   leadgenId: string;
-  eventId: string; // used as external_event_id for dedup
+  eventId: string; // used as external_event_id for the webhook_events dedup key
   raw: unknown;
 }
 
@@ -113,33 +112,62 @@ async function processLeadgenChange(
   supabase: ReturnType<typeof createServiceClient>,
   change: LeadgenChange
 ) {
-  const { id: eventId, duplicate } = await logWebhookEvent(supabase, {
-    source: "meta",
-    external_event_id: change.eventId,
-    event_type: "leadgen",
-    payload: change.raw as Record<string, unknown>,
-  });
+  // Raw delivery log — this is the webhook_events idempotency layer
+  // (distinct from the leads (source, external_id) uniqueness enforced
+  // inside lead.service.ts). Duplicate deliveries of the same leadgen_id
+  // are a no-op here.
+  const { data: eventRow, error: insertError } = await supabase
+    .from("webhook_events")
+    .insert({
+      source: "meta",
+      external_event_id: change.eventId,
+      event_type: "leadgen",
+      payload: change.raw as Json,
+      status: "received",
+    })
+    .select("id")
+    .single();
 
-  if (duplicate) {
-    // Already processed (or in-flight) — nothing to do. This is the
-    // expected, common case for Meta's at-least-once delivery retries.
-    return;
+  if (insertError) {
+    if (insertError.code === "23505") {
+      // Already received (and being/been processed) — expected for Meta's
+      // at-least-once delivery retries. Nothing further to do.
+      return;
+    }
+    throw insertError;
   }
+
+  const eventId = eventRow.id;
 
   try {
     const rawLead = await fetchMetaLead(change.leadgenId);
     const canonical = normalizeMetaLead(rawLead);
-    await upsertCanonicalLead(supabase, canonical);
-    if (eventId) await markWebhookEventStatus(supabase, eventId, "processed");
+    await processCanonicalLead(canonical);
+
+    await supabase
+      .from("webhook_events")
+      .update({ status: "processed", processed_at: new Date().toISOString() })
+      .eq("id", eventId);
   } catch (err) {
-    if (eventId) {
-      await markWebhookEventStatus(
-        supabase,
-        eventId,
-        "failed",
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+    const message = err instanceof Error ? err.message : String(err);
+
+    await supabase
+      .from("webhook_events")
+      .update({
+        status: "failed",
+        error_message: message,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("id", eventId);
+
+    await recordAudit({
+      actor: "system",
+      action: "webhook.processing_failed",
+      entity_type: "webhook_event",
+      entity_id: eventId,
+      metadata: { source: "meta", leadgen_id: change.leadgenId, error: message },
+    });
+
     throw err;
   }
 }

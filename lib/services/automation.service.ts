@@ -1,49 +1,107 @@
-// lib/services/automation.service.ts
+import { createServiceClient } from "@/lib/supabase/service";
+import { recordAudit } from "@/lib/services/audit.service";
+import { notify } from "@/lib/services/notification.service";
+
+// Source-agnostic event bus. A NEW_LEAD event can be emitted by the Meta
+// webhook today, and by Google Sheets sync / website forms / manual CRM
+// entry later — all of them call emitEvent("NEW_LEAD", ...) and never touch
+// Meta-specific code (context doc section 9 / prompt Phase 7).
+export type AutomationEventType = "NEW_LEAD";
+
+interface EventPayloads {
+  NEW_LEAD: { leadId: string };
+}
+
+type Handler<E extends AutomationEventType> = (payload: EventPayloads[E]) => Promise<void>;
+
+const handlers: { [E in AutomationEventType]: Handler<E>[] } = {
+  NEW_LEAD: [handleNewLead],
+};
+
+export async function emitEvent<E extends AutomationEventType>(
+  event: E,
+  payload: EventPayloads[E]
+): Promise<void> {
+  for (const handler of handlers[event]) {
+    try {
+      await handler(payload);
+    } catch (err) {
+      // One handler failing must not block others, and must never roll back
+      // the underlying database write that triggered the event.
+      console.error(`[automation.service] handler failed for event=${event}:`, err);
+      await recordAudit({
+        actor: "system",
+        action: "automation.handler_failed",
+        entity_type: "lead",
+        entity_id: "leadId" in payload ? (payload as { leadId: string }).leadId : undefined,
+        metadata: { event, error: err instanceof Error ? err.message : String(err) },
+      });
+    }
+  }
+}
+
+// --- NEW_LEAD handler --------------------------------------------------------
 //
-// EVENT -> CONDITION -> ACTION -> DB CHANGE -> NOTIFICATION backbone
-// (AF-DOS context doc, section 9). This file currently implements only
-// the "New Lead -> assign -> notify" row of that table. Extend with one
-// function per event type as the other rows come into scope
-// (quotation follow-up, low stock, etc.) — keep each event's logic
-// isolated so this file doesn't become a god-file.
+// EVENT (NEW_LEAD) -> CONDITION -> ACTION -> DB CHANGE -> NOTIFICATION -> AUDIT
+// per context doc section 9.
+async function handleNewLead(payload: EventPayloads["NEW_LEAD"]): Promise<void> {
+  await assignLead(payload.leadId);
+  await notify({
+    type: "NEW_LEAD",
+    title: "New lead received",
+    message: `A new lead (id: ${payload.leadId}) needs follow-up.`,
+    channel: "in_app",
+    metadata: { leadId: payload.leadId },
+  });
+  await recordAudit({
+    actor: "system",
+    action: "automation.new_lead_processed",
+    entity_type: "lead",
+    entity_id: payload.leadId,
+  });
+}
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/types";
+// --- Lead assignment ----------------------------------------------------------
+//
+// Assignment rule (context doc section 21.1): naive least-load round robin
+// over active, non-suspended users with role='user' (Sales). This is a
+// placeholder — swap for territory-based or workload-weighted logic here
+// once that business decision is finalized. Call site (handleNewLead)
+// never needs to change.
+async function assignLead(leadId: string): Promise<void> {
+  const supabase = createServiceClient();
 
-type ServiceClient = SupabaseClient<Database>;
-
-/**
- * TODO (context doc section 21.1 — open decision): assignment algorithm
- * is not finalized. This is a placeholder round-robin over active,
- * non-suspended sales users. Replace with territory/workload-based logic
- * once that decision is made — this function is the only place that
- * needs to change.
- */
-export async function assignSalesperson(supabase: ServiceClient, leadId: string) {
   const { data: salesUsers, error: usersError } = await supabase
     .from("profiles")
     .select("id")
     .eq("role", "user")
-    .eq("status", "active")
-    .order("id"); // stable-ish ordering placeholder; swap for real round-robin state
+    .eq("status", "active");
 
-  if (usersError) throw usersError;
-  if (!salesUsers || salesUsers.length === 0) {
-    // No one to assign — leave unassigned, notify management instead.
-    await notifyManagementUnassignedLead(supabase, leadId);
+  if (usersError) {
+    console.error("[automation.service] failed to load sales users:", usersError.message);
     return;
   }
 
-  // Naive round robin: count existing assignments and pick least-loaded.
-  const { data: counts, error: countsError } = await supabase
+  if (!salesUsers || salesUsers.length === 0) {
+    console.log(
+      `[automation.service] assignLead: no active sales users available (lead ${leadId} left unassigned).`
+    );
+    await notifyManagementUnassigned(leadId);
+    return;
+  }
+
+  const { data: assignedCounts, error: countsError } = await supabase
     .from("leads")
     .select("assigned_to")
     .not("assigned_to", "is", null);
 
-  if (countsError) throw countsError;
+  if (countsError) {
+    console.error("[automation.service] failed to load assignment counts:", countsError.message);
+    return;
+  }
 
   const loadByUser = new Map<string, number>(salesUsers.map((u) => [u.id, 0]));
-  for (const row of counts ?? []) {
+  for (const row of assignedCounts ?? []) {
     if (row.assigned_to && loadByUser.has(row.assigned_to)) {
       loadByUser.set(row.assigned_to, (loadByUser.get(row.assigned_to) ?? 0) + 1);
     }
@@ -56,9 +114,12 @@ export async function assignSalesperson(supabase: ServiceClient, leadId: string)
     .update({ assigned_to: chosenUserId })
     .eq("id", leadId);
 
-  if (updateError) throw updateError;
+  if (updateError) {
+    console.error("[automation.service] failed to assign lead:", updateError.message);
+    return;
+  }
 
-  await supabase.from("audit_logs").insert({
+  await recordAudit({
     actor: "system",
     action: "lead.assigned",
     entity_type: "lead",
@@ -66,42 +127,23 @@ export async function assignSalesperson(supabase: ServiceClient, leadId: string)
     metadata: { assigned_to: chosenUserId },
   });
 
-  await notifyLeadAssigned(supabase, leadId, chosenUserId);
-}
-
-async function notifyLeadAssigned(supabase: ServiceClient, leadId: string, userId: string) {
-  await supabase.from("notifications").insert({
-    recipient: userId,
+  await notify({
     type: "NEW_LEAD",
-    channel: "in_app",
     title: "New lead assigned to you",
-    message: `A new lead has come in and been assigned to you.`,
-    status: "pending",
-    metadata: { lead_id: leadId },
+    message: "A new lead has come in and been assigned to you.",
+    channel: "in_app",
+    recipient: chosenUserId,
+    metadata: { leadId },
   });
-  // TODO: fan out to email/telegram/whatsapp here once channel priority
-  // is decided (context doc section 21.4). Keep each channel's delivery
-  // independently retryable — a failed external channel must not roll
-  // back this in-app notification or the lead itself.
 }
 
-async function notifyManagementUnassignedLead(supabase: ServiceClient, leadId: string) {
-  const { data: admins } = await supabase
-    .from("profiles")
-    .select("id")
-    .in("role", ["admin", "super_admin"]);
-
-  if (!admins || admins.length === 0) return;
-
-  await supabase.from("notifications").insert(
-    admins.map((a) => ({
-      recipient: a.id,
-      type: "UNASSIGNED_LEAD",
-      channel: "in_app" as const,
-      title: "Lead could not be auto-assigned",
-      message: "No active salesperson available for a new lead.",
-      status: "pending" as const,
-      metadata: { lead_id: leadId },
-    }))
-  );
+async function notifyManagementUnassigned(leadId: string): Promise<void> {
+  await notify({
+    type: "UNASSIGNED_LEAD",
+    title: "Lead could not be auto-assigned",
+    message: "No active salesperson available for a new lead.",
+    channel: "in_app",
+    // recipient omitted -> notify() falls back to all admins/super_admins
+    metadata: { leadId },
+  });
 }

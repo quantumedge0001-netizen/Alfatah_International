@@ -1,22 +1,12 @@
 // lib/integrations/meta/leads.ts
 //
 // Adapter boundary: this file is the ONLY place that should know about
-// Meta's webhook payload shape. Everything downstream (webhook route,
-// lead service, automation) works with the canonical shape returned here.
-//
-// Meta sends a lightweight "change" notification containing only a
-// leadgen_id — it does NOT include the actual field data. We must call
-// the Graph API to fetch the full lead.
+// Meta's webhook payload shape. It normalizes into CanonicalLeadInput
+// (defined in lib/services/lead.service.ts) — the shared shape every
+// lead source must produce. Nothing downstream of lead.service.ts should
+// ever know this data came from Meta specifically.
 
-export interface CanonicalLead {
-  source: "meta";
-  external_id: string; // Meta's leadgen_id — used for the (source, external_id) dedup key
-  name: string | null;
-  phone: string | null;
-  email: string | null;
-  requirement: string | null; // best-effort free text summary of form answers
-  raw_payload: Record<string, unknown>; // full Graph API response, kept for audit/debug
-}
+import type { CanonicalLeadInput } from "@/lib/services/lead.service";
 
 // Shape of the field_data array returned by the Graph API leadgen endpoint.
 interface MetaLeadField {
@@ -39,7 +29,8 @@ interface MetaLeadGraphResponse {
 
 /**
  * Fetches the full lead data from Meta's Graph API using the leadgen_id
- * we receive in the webhook notification.
+ * we receive in the webhook notification (Meta's webhook payload itself
+ * only contains a reference id, not the form answers).
  *
  * Requires META_PAGE_ACCESS_TOKEN in env — never expose this to the client.
  */
@@ -77,11 +68,12 @@ function extractField(fieldData: MetaLeadField[], candidates: string[]): string 
 }
 
 /**
- * Normalizes a raw Meta Graph API lead response into the canonical Lead shape.
- * Any field_data entries that don't map to name/phone/email are folded into
- * `requirement` as a readable summary, so nothing from the form is silently lost.
+ * Normalizes a raw Meta Graph API lead response into CanonicalLeadInput —
+ * the shape lead.service.ts's processCanonicalLead() expects. Any
+ * field_data entries that don't map to name/phone/email are folded into
+ * `requirement` as a readable summary, so nothing from the form is lost.
  */
-export function normalizeMetaLead(raw: MetaLeadGraphResponse): CanonicalLead {
+export function normalizeMetaLead(raw: MetaLeadGraphResponse): CanonicalLeadInput {
   const fieldData = raw.field_data ?? [];
 
   const name = extractField(fieldData, NAME_FIELDS);

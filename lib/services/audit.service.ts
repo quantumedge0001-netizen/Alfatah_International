@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import type { Json } from "@/lib/types";
 
 export interface AuditEntry {
   actor: string; // profile id, or 'system' for webhook/automation-driven actions
@@ -19,9 +20,8 @@ export async function recordAudit(entry: AuditEntry): Promise<void> {
       action: entry.action,
       entity_type: entry.entity_type ?? null,
       entity_id: entry.entity_id ?? null,
-      metadata: entry.metadata ?? {},
+      metadata: (entry.metadata ?? {}) as Json,
     });
-
     if (error) {
       console.error("[audit.service] failed to write audit log:", error.message, entry);
     }

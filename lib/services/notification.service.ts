@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/service";
+import type { Json } from "@/lib/types";
 
 export type NotificationChannel = "in_app" | "email" | "telegram" | "whatsapp" | "push";
 
@@ -27,7 +28,7 @@ export async function notify(input: NotifyInput): Promise<void> {
         channel: input.channel,
         title: input.title,
         message: input.message ?? null,
-        metadata: input.metadata ?? {},
+        metadata: (input.metadata ?? {}) as Json,
         status: "pending",
       })
       .select("id")

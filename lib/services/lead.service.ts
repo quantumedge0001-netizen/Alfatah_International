@@ -1,6 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/service";
 import { recordAudit } from "@/lib/services/audit.service";
 import { emitEvent } from "@/lib/services/automation.service";
+import type { Json } from "@/lib/types";
 
 // Every source adapter (Meta, Google Sheets, website form, manual entry...)
 // must produce this shape. No source-specific field names should leak past
@@ -47,7 +48,7 @@ export async function processCanonicalLead(input: CanonicalLeadInput): Promise<P
         source: input.source,
         external_id: input.external_id,
         requirement: input.requirement,
-        raw_payload: input.raw_payload,
+        raw_payload: input.raw_payload as Json,
       },
       { onConflict: "source,external_id" }
     )
