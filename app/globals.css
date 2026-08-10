@@ -19,15 +19,6 @@ body {
 .status-pill.pending { @apply bg-[#f2e9dc] text-brass; }
 .status-pill.review { @apply bg-[#f3e0dd] text-stamp; }
 
-/* Lead statuses (leads.status) */
-.status-pill.new { @apply bg-[#dfe7f2] text-[#2f5aa3]; }
-.status-pill.contacted,
-.status-pill.qualified { @apply bg-[#f2e9dc] text-brass; }
-.status-pill.quoted { @apply bg-[#e6e0f2] text-[#5a3fa3]; }
-.status-pill.won { @apply bg-[#e4efe8] text-success; }
-.status-pill.lost,
-.status-pill.cancelled { @apply bg-[#f3e0dd] text-stamp; }
-
 /* Notification toast animations — see components/Notification */
 @keyframes notification-slide-in {
   from { opacity: 0; transform: translateY(-10px) scale(0.98); }
