@@ -39,27 +39,27 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
 
   return (
     <aside
-      className={`sticky top-0 flex h-screen flex-shrink-0 flex-col bg-gradient-to-b from-ink to-ink2 px-3 py-6 text-[#dbe6e4] transition-[width] duration-300 ${
+      className={`sticky top-0 flex h-screen flex-shrink-0 flex-col bg-[#072F5F] px-3 py-6 text-white transition-[width] duration-300 ${
         collapsed ? "w-[72px]" : "w-60"
       }`}
     >
       {/* Toggle button - sidebar ke top-right border par floating */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-4 top-7 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-brass/40 bg-ink text-brass shadow-md shadow-black/30 transition-colors hover:bg-ink2"
+        className="absolute -right-4 top-7 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-[#58CCED]/40 bg-[#072F5F] text-[#58CCED] shadow-md shadow-black/30 transition-colors hover:bg-[#0a3d7a]"
         aria-label="Toggle sidebar"
       >
         {collapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
       </button>
 
       <div className={`mb-9 flex-shrink-0 ${collapsed ? "px-0" : "px-2"}`}>
-        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#7fa8a0] font-display text-base font-bold text-[#f3f5f2]">
+        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#58CCED] font-display text-base font-bold text-white">
           M
         </div>
         {!collapsed && (
           <>
-            <div className="font-display text-base font-bold tracking-tight text-[#f3f5f2]">Membrane Mart</div>
-            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-[#7fa8a0]">
+            <div className="font-display text-base font-bold tracking-tight text-white">Membrane Mart</div>
+            <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-[#58CCED]">
               Import &amp; Gov. Sales
             </div>
           </>
@@ -71,7 +71,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         className="sidebar-scroll flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden pr-1"
         style={{
           scrollbarWidth: "thin",
-          scrollbarColor: "rgba(127,168,160,0.5) transparent",
+          scrollbarColor: "#58CCED transparent",
         }}
       >
         <NavLink href="/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} />
@@ -89,7 +89,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         {profile.role !== "user" && (
           <>
             {!collapsed && (
-              <div className="mb-2 mt-4 px-3 font-mono text-[10px] uppercase tracking-widest text-[#5c7570]">
+              <div className="mb-2 mt-4 px-3 font-mono text-[10px] uppercase tracking-widest text-[#58CCED]/70">
                 Administration
               </div>
             )}
@@ -106,17 +106,17 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
 
       <div className="flex-shrink-0 border-t border-white/10 pt-4">
         <div
-          className={`mb-3 flex items-center gap-2.5 rounded-lg border border-dashed border-[#7fa8a0]/50 bg-white/5 px-2.5 py-2 ${
+          className={`mb-3 flex items-center gap-2.5 rounded-lg border border-dashed border-[#58CCED]/50 bg-white/5 px-2.5 py-2 ${
             collapsed ? "justify-center" : ""
           }`}
         >
-          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] border-brass font-mono text-[10px] font-semibold text-brass">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#58CCED] font-mono text-[10px] font-semibold text-[#58CCED]">
             {initials}
           </div>
           {!collapsed && (
             <div className="leading-tight">
-              <div className="text-[11.5px] font-semibold text-[#f3f5f2]">{profile.full_name}</div>
-              <div className="font-mono text-[9.5px] tracking-wide text-[#8fb0aa]">
+              <div className="text-[11.5px] font-semibold text-white">{profile.full_name}</div>
+              <div className="font-mono text-[9.5px] tracking-wide text-[#58CCED]">
                 {profile.role === "super_admin" ? "GLOBAL · ALL REGIONS" : (regionName || "REGION UNASSIGNED").toUpperCase()}
               </div>
             </div>
@@ -124,7 +124,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         </div>
         <form action={signOut}>
           <button
-            className={`w-full rounded-md border border-white/10 py-2 text-[11.5px] text-[#b7c8c5] hover:bg-white/5 ${
+            className={`w-full rounded-md border border-white/10 py-2 text-[11.5px] text-white/80 hover:bg-white/5 ${
               collapsed ? "px-0" : "px-3 text-left"
             }`}
           >
@@ -142,11 +142,11 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
           background: transparent;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb {
-          background-color: rgba(127, 168, 160, 0.5);
+          background-color: #58CCED;
           border-radius: 10px;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(127, 168, 160, 0.8);
+          background-color: #7fd9f5;
         }
       `}</style>
     </aside>
@@ -168,7 +168,7 @@ function NavLink({
     <Link
       href={href}
       title={collapsed ? label : undefined}
-      className={`flex items-center gap-2.5 rounded-md py-2.5 text-[13.5px] font-medium text-[#b7c8c5] hover:bg-white/5 hover:text-white ${
+      className={`flex items-center gap-2.5 rounded-md py-2.5 text-[13.5px] font-medium text-white/70 hover:bg-white/10 hover:text-white ${
         collapsed ? "justify-center px-0" : "px-3"
       }`}
     >

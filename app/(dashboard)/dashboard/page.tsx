@@ -6,13 +6,23 @@ import SalesTrendChart from "@/components/charts/SalesTrendChart";
 import InventoryDonutChart from "@/components/charts/InventoryDonutChart";
 
 export default async function DashboardPage() {
-  const profile = await requireProfile();
   const supabase = await createClient();
 
-  const [{ count: importsCount }, { data: inventoryRows }, { data: salesRows }] = await Promise.all([
+  // profile aur baaki saari queries ek sath parallel chalao — koi bhi
+  // dusre ko block nahi karega
+  const [
+    profile,
+    { count: importsCount },
+    { data: inventoryRows },
+    { data: salesRows },
+  ] = await Promise.all([
+    requireProfile(),
     supabase.from("imports").select("*", { count: "exact", head: true }),
     supabase.from("inventory").select("quantity_available"),
-    supabase.from("sales").select("total_price"),
+    supabase
+      .from("sales")
+      .select("total_price, created_at")
+      .order("created_at", { ascending: true }),
   ]);
 
   const totalUnits = (inventoryRows ?? []).reduce((sum, r) => sum + (r.quantity_available ?? 0), 0);
@@ -20,25 +30,13 @@ export default async function DashboardPage() {
   const lowStockCount = (inventoryRows ?? []).filter((r) => (r.quantity_available ?? 0) < 200).length;
   const healthyStockCount = (inventoryRows ?? []).length - lowStockCount;
 
-  // Guarded query — only works if `sales.created_at` exists. Fails silently otherwise.
-  let monthlyTrend: { month: string; total: number }[] = [];
-  try {
-    const { data: dated, error } = await supabase
-      .from("sales")
-      .select("total_price, created_at")
-      .order("created_at", { ascending: true });
-
-    if (!error && dated) {
-      const grouped = new Map<string, number>();
-      for (const row of dated as { total_price: number; created_at: string }[]) {
-        const label = new Date(row.created_at).toLocaleDateString("en-US", { month: "short" });
-        grouped.set(label, (grouped.get(label) ?? 0) + (row.total_price ?? 0));
-      }
-      monthlyTrend = Array.from(grouped, ([month, total]) => ({ month, total }));
-    }
-  } catch {
-    monthlyTrend = [];
+  // monthlyTrend ab isi sales fetch se ban raha hai — dobara query nahi ho rahi
+  const grouped = new Map<string, number>();
+  for (const row of (salesRows ?? []) as { total_price: number; created_at: string }[]) {
+    const label = new Date(row.created_at).toLocaleDateString("en-US", { month: "short" });
+    grouped.set(label, (grouped.get(label) ?? 0) + (row.total_price ?? 0));
   }
+  const monthlyTrend = Array.from(grouped, ([month, total]) => ({ month, total }));
 
   return (
     <div>
