@@ -2,7 +2,7 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
-const COLORS = ["#1f7a68", "#c0392b"];
+const COLORS = ["#072F5F", "#58CCED"];
 
 export default function InventoryDonutChart({ healthy, low }: { healthy: number; low: number }) {
   const total = healthy + low;
@@ -29,7 +29,7 @@ export default function InventoryDonutChart({ healthy, low }: { healthy: number;
         </PieChart>
       </ResponsiveContainer>
       <div className="pointer-events-none absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 text-center">
-        <div className="text-xl font-bold text-ink">{total > 0 ? Math.round((healthy / total) * 100) : 0}%</div>
+        <div className="text-xl font-bold text-[#072F5F]">{total > 0 ? Math.round((healthy / total) * 100) : 0}%</div>
         <div className="text-[10px] uppercase tracking-wide text-muted">Healthy</div>
       </div>
     </div>

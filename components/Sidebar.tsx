@@ -40,7 +40,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
   return (
     <aside
       className={`sticky top-0 flex h-screen flex-shrink-0 flex-col bg-[#072F5F] px-3 py-6 text-white transition-[width] duration-300 ${
-        collapsed ? "w-[72px]" : "w-60"
+        collapsed ? "w-[72px]" : "w-53"
       }`}
     >
       {/* Toggle button - sidebar ke top-right border par floating */}
@@ -60,7 +60,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
           <>
             <div className="font-display text-base font-bold tracking-tight text-white">Membrane Mart</div>
             <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-[#58CCED]">
-              Import &amp; Gov. Sales
+              CRM & Inventory
             </div>
           </>
         )}
