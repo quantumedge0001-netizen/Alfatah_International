@@ -8,8 +8,6 @@ import InventoryDonutChart from "@/components/charts/InventoryDonutChart";
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // profile aur baaki saari queries ek sath parallel chalao — koi bhi
-  // dusre ko block nahi karega
   const [
     profile,
     { count: importsCount },
@@ -30,7 +28,6 @@ export default async function DashboardPage() {
   const lowStockCount = (inventoryRows ?? []).filter((r) => (r.quantity_available ?? 0) < 200).length;
   const healthyStockCount = (inventoryRows ?? []).length - lowStockCount;
 
-  // monthlyTrend ab isi sales fetch se ban raha hai — dobara query nahi ho rahi
   const grouped = new Map<string, number>();
   for (const row of (salesRows ?? []) as { total_price: number; created_at: string }[]) {
     const label = new Date(row.created_at).toLocaleDateString("en-US", { month: "short" });
@@ -39,26 +36,27 @@ export default async function DashboardPage() {
   const monthlyTrend = Array.from(grouped, ([month, total]) => ({ month, total }));
 
   return (
-    <div>
+   <div>
       {/* Hero / welcome card */}
-      <div className="mb-6 flex flex-col justify-between gap-4 rounded-xl border border-line bg-gradient-to-br from-ink to-ink2 p-6 text-[#dbe6e4] sm:flex-row sm:items-center">
+      <div className="mb-6 flex flex-col justify-between gap-6 rounded-2xl border border-[#072F5F]/20 bg-gradient-to-br from-[#072F5F] to-[#0a3d7a] p-8 text-white shadow-lg shadow-[#072F5F]/10 sm:flex-row sm:items-center">
         <div>
-          <div className="text-[13px] text-[#8fb0aa]">Welcome back</div>
-          <h1 className="font-display text-xl font-semibold tracking-tight text-[#f3f5f2]">
+          <div className="text-[13px] font-medium uppercase tracking-widest text-[#58CCED]">Welcome back</div>
+          <h1 className="mt-1.5 font-display text-[28px] font-bold tracking-tight text-white">
             {profile.full_name}
           </h1>
-          <p className="mt-1 text-[13px] text-[#b7c8c5]">
+          <p className="mt-2 text-[14px] text-white/70">
             {profile.role === "super_admin" ? "Consolidated view — all regions combined" : "Scoped to your assigned region"}
           </p>
         </div>
-        <div className="flex gap-6">
+        <div className="flex gap-8">
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#7fa8a0]">Total Sales</div>
-            <div className="text-xl font-bold text-[#f3f5f2]">₨ {totalSalesValue.toLocaleString()}</div>
+            <div className="text-[11.5px] font-medium uppercase tracking-widest text-[#58CCED]">Total Sales</div>
+            <div className="mt-1.5 text-[28px] font-bold tracking-tight text-white">₨ {totalSalesValue.toLocaleString()}</div>
           </div>
+          <div className="w-px bg-white/10" />
           <div>
-            <div className="text-[11px] uppercase tracking-wide text-[#7fa8a0]">Inventory</div>
-            <div className="text-xl font-bold text-[#f3f5f2]">{totalUnits.toLocaleString()} units</div>
+            <div className="text-[11.5px] font-medium uppercase tracking-widest text-[#58CCED]">Inventory</div>
+            <div className="mt-1.5 text-[28px] font-bold tracking-tight text-white">{totalUnits.toLocaleString()} units</div>
           </div>
         </div>
       </div>
@@ -90,13 +88,13 @@ export default async function DashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-line bg-card p-5 lg:col-span-2">
-          <div className="mb-1 font-display text-[14px] font-semibold text-ink">Sales Trend</div>
+          <div className="mb-1 font-display text-[14px] font-semibold text-[#072F5F]">Sales Trend</div>
           <div className="mb-4 text-[12px] text-muted">Government sales by month</div>
           <SalesTrendChart data={monthlyTrend} />
         </div>
 
         <div className="rounded-xl border border-line bg-card p-5">
-          <div className="mb-1 font-display text-[14px] font-semibold text-ink">Stock Health</div>
+          <div className="mb-1 font-display text-[14px] font-semibold text-[#072F5F]">Stock Health</div>
           <div className="mb-4 text-[12px] text-muted">Inventory items by stock level</div>
           <InventoryDonutChart healthy={healthyStockCount} low={lowStockCount} />
         </div>

@@ -1,9 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 
 const TONES = {
-  teal: { bg: "bg-[#e8f3f1]", text: "text-[#1f7a68]" },
-  brass: { bg: "bg-[#fbf1e0]", text: "text-[#a67c2e]" },
-  ink: { bg: "bg-[#eef0f4]", text: "text-ink" },
+  teal: { bg: "bg-[#e6f7fc]", text: "text-[#58CCED]" },
+  brass: { bg: "bg-[#e8eef7]", text: "text-[#072F5F]" },
+  ink: { bg: "bg-[#eef0f4]", text: "text-[#072F5F]" },
   warn: { bg: "bg-[#fdeceb]", text: "text-[#c0392b]" },
 } as const;
 
@@ -34,7 +34,7 @@ export default function KpiCard({
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold tracking-tight text-ink">{value}</div>
+      <div className="text-2xl font-bold tracking-tight text-[#072F5F]">{value}</div>
       {delta && (
         <div className={`mt-1.5 text-[12px] font-medium ${warn ? "text-[#c0392b]" : "text-muted"}`}>{delta}</div>
       )}
