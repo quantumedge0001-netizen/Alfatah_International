@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { createPrivateCompany } from "@/lib/actions/private-companies";
 
 function SubmitButton() {
@@ -17,7 +18,7 @@ function SubmitButton() {
 }
 
 export default function PrivateCompanyForm() {
-  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
+  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
     createPrivateCompany,
     { error: null }
   );
