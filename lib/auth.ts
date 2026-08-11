@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { Profile } from "@/lib/types";
@@ -31,7 +32,9 @@ export async function signIn(
 
 // Fetches the signed-in user's profile row (role + region_id).
 // Redirects to /login if there is no session.
-export async function requireProfile(): Promise<Profile> {
+// Wrapped in React's cache() so multiple calls within the same request
+// (e.g. from a layout AND a page) only hit the DB/auth server once.
+export const requireProfile = cache(async (): Promise<Profile> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,4 +68,4 @@ export async function requireProfile(): Promise<Profile> {
   }
 
   return profile as Profile;
-}
+});

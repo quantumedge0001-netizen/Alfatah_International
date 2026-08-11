@@ -4,6 +4,8 @@
 
 :root {
   --line: #d7dcd6;
+  --sidebar-bg: #072F5F;
+  --sidebar-scroll: #58CCED;
 }
 
 body {

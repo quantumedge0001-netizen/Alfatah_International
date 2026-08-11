@@ -17,3 +17,4 @@
 *.pem
 npm-debug.log*
 * text=auto eol=lf
+next-env.d.ts
