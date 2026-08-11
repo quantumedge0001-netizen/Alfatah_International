@@ -14,6 +14,11 @@ import {
   MapPin,
   ChevronsLeft,
   ChevronsRight,
+  Camera,
+  FileText,
+  CalendarCheck,
+  Wallet,
+  PieChart,
 } from "lucide-react";
 import type { Profile } from "@/lib/types";
 import { signOut } from "@/lib/actions/auth";
@@ -39,14 +44,15 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
       }`}
     >
       {/* Toggle button - sidebar ke top-right border par floating */}
-    <button
-  onClick={() => setCollapsed(!collapsed)}
-  className="absolute -right-4 top-7 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-brass/40 bg-ink text-brass shadow-md shadow-black/30 transition-colors hover:bg-ink2"
-  aria-label="Toggle sidebar"
->
-  {collapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
-</button>
-      <div className={`mb-9 ${collapsed ? "px-0" : "px-2"}`}>
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-4 top-7 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-brass/40 bg-ink text-brass shadow-md shadow-black/30 transition-colors hover:bg-ink2"
+        aria-label="Toggle sidebar"
+      >
+        {collapsed ? <ChevronsRight size={15} /> : <ChevronsLeft size={15} />}
+      </button>
+
+      <div className={`mb-9 flex-shrink-0 ${collapsed ? "px-0" : "px-2"}`}>
         <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-full border-[1.5px] border-[#7fa8a0] font-display text-base font-bold text-[#f3f5f2]">
           M
         </div>
@@ -60,13 +66,25 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         )}
       </div>
 
-      <nav className="flex-1 space-y-0.5">
+      {/* Scrollable nav area */}
+      <nav
+        className="sidebar-scroll flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden pr-1"
+        style={{
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(127,168,160,0.5) transparent",
+        }}
+      >
         <NavLink href="/dashboard" label="Dashboard" icon={LayoutDashboard} collapsed={collapsed} />
         <NavLink href="/leads" label="Leads" icon={Inbox} collapsed={collapsed} />
         <NavLink href="/imports" label="Import Register" icon={Ship} collapsed={collapsed} />
         <NavLink href="/inventory" label="Inventory" icon={Boxes} collapsed={collapsed} />
         <NavLink href="/sales" label="Government Sales" icon={Landmark} collapsed={collapsed} />
         <NavLink href="/private-sales" label="Private Sales" icon={Briefcase} collapsed={collapsed} />
+        <NavLink href="/invoices" label="Invoice / Challan" icon={FileText} collapsed={collapsed} />
+        <NavLink href="/camera-agent" label="Camera Agent" icon={Camera} collapsed={collapsed} />
+        <NavLink href="/attendance" label="Attendance" icon={CalendarCheck} collapsed={collapsed} />
+        <NavLink href="/salary" label="Salary" icon={Wallet} collapsed={collapsed} />
+        <NavLink href="/finance" label="Finance" icon={PieChart} collapsed={collapsed} />
 
         {profile.role !== "user" && (
           <>
@@ -86,7 +104,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         )}
       </nav>
 
-      <div className="border-t border-white/10 pt-4">
+      <div className="flex-shrink-0 border-t border-white/10 pt-4">
         <div
           className={`mb-3 flex items-center gap-2.5 rounded-lg border border-dashed border-[#7fa8a0]/50 bg-white/5 px-2.5 py-2 ${
             collapsed ? "justify-center" : ""
@@ -114,6 +132,23 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
           </button>
         </form>
       </div>
+
+      {/* Thin webkit scrollbar for the nav */}
+      <style jsx global>{`
+        .sidebar-scroll::-webkit-scrollbar {
+          width: 5px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+          background-color: rgba(127, 168, 160, 0.5);
+          border-radius: 10px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(127, 168, 160, 0.8);
+        }
+      `}</style>
     </aside>
   );
 }
