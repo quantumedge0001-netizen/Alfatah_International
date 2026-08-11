@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import PrivateCompanyForm from "@/components/PrivateCompanyForm";
+import PageHeader from "@/components/PageHeader";
 
 export default async function PrivateCompaniesPage() {
   const supabase = await createClient();
@@ -10,12 +11,11 @@ export default async function PrivateCompaniesPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-semibold text-ink">Private Companies</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          Textile, F&amp;B, pharma, dyeing, packaging, ice plants, hospitals, and other private buyers
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Private Companies"
+        subtitle="Textile, F&B, pharma, dyeing, packaging, ice plants, hospitals, and other private buyers"
+      />
 
       <PrivateCompanyForm />
 

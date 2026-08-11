@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import PageHeader from "@/components/PageHeader";
 
 export default async function RegionsPage() {
   const supabase = await createClient();
@@ -9,10 +10,11 @@ export default async function RegionsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-semibold text-ink">Regions &amp; Admins</h1>
-        <p className="mt-0.5 text-[13px] text-muted">Super Admin only · seeds the region_id every table filters on</p>
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Regions & Admins"
+        subtitle="Super Admin only · seeds the region_id every table filters on"
+      />
 
       <div className="rounded-xl border border-line bg-card p-5">
         <table className="w-full border-collapse">

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import PageHeader from "@/components/PageHeader";
 
 export default async function InstitutionsPage() {
   const supabase = await createClient();
@@ -9,10 +10,11 @@ export default async function InstitutionsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-semibold text-ink">Government Institutions</h1>
-        <p className="mt-0.5 text-[13px] text-muted">Buyers across Jamshoro, Tharparkar, and Umerkot</p>
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Government Institutions"
+        subtitle="Buyers across Jamshoro, Tharparkar, and Umerkot"
+      />
 
       <div className="rounded-xl border border-line bg-card p-5">
         <table className="w-full border-collapse">

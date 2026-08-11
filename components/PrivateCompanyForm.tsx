@@ -10,7 +10,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg bg-ink px-4 py-2 text-[13px] font-medium text-white hover:bg-ink2 disabled:opacity-60"
+      className="rounded-lg bg-[#072F5F] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#0a3d7a] disabled:opacity-60"
     >
       {pending ? "Adding…" : "+ Add Company"}
     </button>
