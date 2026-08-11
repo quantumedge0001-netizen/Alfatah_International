@@ -1,9 +1,9 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/actions/auth";
+import { updatePassword } from "@/lib/actions/auth";
 import { useNotification } from "@/components/Notification";
 
 function SubmitButton() {
@@ -14,35 +14,27 @@ function SubmitButton() {
       disabled={pending}
       className="w-full rounded-lg bg-gradient-to-r from-fuchsia-600 to-violet-600 py-2.5 text-sm font-medium text-white transition hover:from-fuchsia-500 hover:to-violet-500 disabled:opacity-60"
     >
-      {pending ? "Signing in…" : "Login"}
+      {pending ? "Updating…" : "Update password"}
     </button>
   );
 }
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const [state, formAction] = useActionState<{ error: string | null; success?: boolean }, FormData>(
-    signIn,
+    updatePassword,
     { error: null }
   );
   const { notify } = useNotification();
   const router = useRouter();
-  const [callbackError, setCallbackError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("error") === "auth-callback-failed") {
-      setCallbackError("That reset link is invalid or has expired. Please request a new one.");
-    }
-  }, []);
 
   useEffect(() => {
     if (!state?.success) return;
     notify({
       type: "success",
-      title: "Login successful",
-      message: "Taking you to your dashboard…",
+      title: "Password updated",
+      message: "Taking you to sign in…",
     });
-    const timer = setTimeout(() => router.push("/dashboard"), 1100);
+    const timer = setTimeout(() => router.push("/login"), 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.success]);
@@ -69,53 +61,41 @@ export default function LoginPage() {
               M
             </div>
             <h1 className="font-display text-lg font-semibold text-white sm:text-xl">
-              Membrane Mart
+              Reset password
             </h1>
-            <p className="mt-1 text-xs text-white/50">Import &amp; Government Sales Platform</p>
+            <p className="mt-1 text-xs text-white/50">Choose a new password for your account.</p>
           </div>
-
-          {callbackError && (
-            <p className="mb-4 rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-              {callbackError}{" "}
-              <a href="/forgot-password" className="font-medium underline underline-offset-2">
-                Request a new link
-              </a>
-            </p>
-          )}
 
           <form action={formAction} className="space-y-4">
             <div>
-              <label htmlFor="email" className="mb-1 block text-xs font-medium text-white/60">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-fuchsia-400/60 focus:bg-white/[0.07] focus:ring-2 focus:ring-fuchsia-400/20"
-                placeholder="you@membranemart.com"
-              />
-            </div>
-            <div>
               <label htmlFor="password" className="mb-1 block text-xs font-medium text-white/60">
-                Password
+                New password
               </label>
               <input
                 id="password"
                 name="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                minLength={6}
+                autoComplete="new-password"
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-fuchsia-400/60 focus:bg-white/[0.07] focus:ring-2 focus:ring-fuchsia-400/20"
                 placeholder="••••••••"
               />
-              <div className="mt-1.5 text-right">
-                <a href="/forgot-password" className="text-xs font-medium text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200">
-                  Forgot password?
-                </a>
-              </div>
+            </div>
+            <div>
+              <label htmlFor="confirmPassword" className="mb-1 block text-xs font-medium text-white/60">
+                Confirm password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-fuchsia-400/60 focus:bg-white/[0.07] focus:ring-2 focus:ring-fuchsia-400/20"
+                placeholder="••••••••"
+              />
             </div>
 
             {state?.error && (
@@ -126,20 +106,8 @@ export default function LoginPage() {
 
             <SubmitButton />
           </form>
-
-          <p className="mt-6 text-center text-[11px] text-white/40">
-            Accounts are created by your Admin or Super Admin. Contact them for access.
-          </p>
-
-          <p className="mt-3 text-center text-xs text-white/50">
-            Don&apos;t have an account?{" "}
-            <a href="/signup" className="font-medium text-fuchsia-300 underline underline-offset-2 hover:text-fuchsia-200">
-              Sign up
-            </a>
-          </p>
         </div>
       </div>
     </main>
   );
 }
-//hello world
