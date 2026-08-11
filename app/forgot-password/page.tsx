@@ -1,8 +1,9 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { requestPasswordReset } from "@/lib/actions/auth";
+import { useNotification } from "@/components/Notification";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -22,6 +23,13 @@ export default function ForgotPasswordPage() {
     requestPasswordReset,
     { error: null }
   );
+  const { notify } = useNotification();
+
+  useEffect(() => {
+    if (!state?.error) return;
+    notify({ type: "error", title: "Couldn't send reset link", message: state.error });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0b14] px-4 py-10 sm:px-6">
@@ -72,12 +80,6 @@ export default function ForgotPasswordPage() {
                   placeholder="you@membranemart.com"
                 />
               </div>
-
-              {state?.error && (
-                <p className="rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-                  {state.error}
-                </p>
-              )}
 
               <SubmitButton />
             </form>

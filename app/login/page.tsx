@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/actions/auth";
 import { useNotification } from "@/components/Notification";
@@ -26,13 +26,18 @@ export default function LoginPage() {
   );
   const { notify } = useNotification();
   const router = useRouter();
-  const [callbackError, setCallbackError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "auth-callback-failed") {
-      setCallbackError("That reset link is invalid or has expired. Please request a new one.");
+      notify({
+        type: "error",
+        title: "Reset link invalid",
+        message: "That reset link is invalid or has expired. Use \"Forgot password?\" below to request a new one.",
+        duration: 0,
+      });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -46,6 +51,12 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.success]);
+
+  useEffect(() => {
+    if (!state?.error) return;
+    notify({ type: "error", title: "Login failed", message: state.error });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0b14] px-4 py-10 sm:px-6">
@@ -73,15 +84,6 @@ export default function LoginPage() {
             </h1>
             <p className="mt-1 text-xs text-white/50">Import &amp; Government Sales Platform</p>
           </div>
-
-          {callbackError && (
-            <p className="mb-4 rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-              {callbackError}{" "}
-              <a href="/forgot-password" className="font-medium underline underline-offset-2">
-                Request a new link
-              </a>
-            </p>
-          )}
 
           <form action={formAction} className="space-y-4">
             <div>
@@ -117,12 +119,6 @@ export default function LoginPage() {
                 </a>
               </div>
             </div>
-
-            {state?.error && (
-              <p className="rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-                {state.error}
-              </p>
-            )}
 
             <SubmitButton />
           </form>

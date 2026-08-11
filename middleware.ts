@@ -17,6 +17,7 @@ export async function middleware(request: NextRequest) {
     path === "/forgot-password" ||
     path === "/reset-password" ||
     path.startsWith("/auth/callback") ||
+    path.startsWith("/auth/confirm") ||
     path.startsWith("/_next") ||
     path.startsWith("/manifest");
 
