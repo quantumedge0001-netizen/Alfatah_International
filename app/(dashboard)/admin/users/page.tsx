@@ -1,5 +1,6 @@
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import PageHeader from "@/components/PageHeader";
 
 export default async function UsersPage() {
   const profile = await requireProfile();
@@ -12,12 +13,11 @@ export default async function UsersPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-display text-xl font-semibold text-ink">Users</h1>
-        <p className="mt-0.5 text-[13px] text-muted">
-          {profile.role === "super_admin" ? "All accounts, all regions" : "Accounts within your region"}
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Administration"
+        title="Users"
+        subtitle={profile.role === "super_admin" ? "All accounts, all regions" : "Accounts within your region"}
+      />
 
       <div className="rounded-xl border border-line bg-card p-5">
         <table className="w-full border-collapse">
