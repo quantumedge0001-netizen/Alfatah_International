@@ -21,9 +21,16 @@ export default async function LeadsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-xl font-semibold text-ink">Leads</h1>
+          <h1 className="font-display text-xl font-semibold text-[#072F5F]">Leads</h1>
           <p className="mt-0.5 text-[13px] text-muted">
-            {newCount > 0 ? `${newCount} new lead${newCount === 1 ? "" : "s"} awaiting follow-up` : "All caught up"}
+            {newCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-[#072F5F]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#58CCED]" />
+                {newCount} new lead{newCount === 1 ? "" : "s"} awaiting follow-up
+              </span>
+            ) : (
+              "All caught up"
+            )}
             {" · "}Meta Lead Ads (more sources coming: Google Sheets, website)
           </p>
         </div>
@@ -32,7 +39,7 @@ export default async function LeadsPage() {
       <div className="rounded-xl border border-line bg-card p-5">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-line text-left font-mono text-[10px] uppercase tracking-wider text-muted">
+            <tr className="border-b border-[#072F5F]/15 text-left font-mono text-[10px] uppercase tracking-wider text-[#072F5F]/60">
               <th className="pb-2.5 pr-2">Name</th>
               <th className="pb-2.5 pr-2">Contact</th>
               <th className="pb-2.5 pr-2">Source</th>
@@ -43,13 +50,13 @@ export default async function LeadsPage() {
           </thead>
           <tbody>
             {(leads ?? []).map((lead) => (
-              <tr key={lead.id} className="border-b border-paper text-[12.5px] last:border-0">
-                <td className="py-2.5 pr-2">{lead.name ?? "—"}</td>
+              <tr key={lead.id} className="border-b border-paper text-[12.5px] last:border-0 hover:bg-[#072F5F]/[0.02]">
+                <td className="py-2.5 pr-2 font-medium text-ink">{lead.name ?? "—"}</td>
                 <td className="py-2.5 pr-2 font-mono text-muted">
                   {lead.phone ?? lead.email ?? "—"}
                 </td>
                 <td className="py-2.5 pr-2">
-                  <span className="rounded-full bg-paper px-2 py-0.5 text-[10.5px] capitalize text-muted">
+                  <span className="rounded-full bg-[#072F5F]/[0.06] px-2 py-0.5 text-[10.5px] capitalize text-[#072F5F]">
                     {lead.source}
                   </span>
                 </td>

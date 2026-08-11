@@ -16,10 +16,10 @@ body {
 .status-pill {
   @apply inline-block rounded-full px-2.5 py-1 text-[10.5px] font-mono font-semibold tracking-wide;
 }
-.status-pill.delivered { @apply bg-[#e4efe8] text-success; }
+.status-pill.delivered { @apply bg-[#e6f7fc] text-[#072F5F]; }
 .status-pill.dispatched,
-.status-pill.pending { @apply bg-[#f2e9dc] text-brass; }
-.status-pill.review { @apply bg-[#f3e0dd] text-stamp; }
+.status-pill.pending { @apply bg-[#eef4fb] text-[#0a3d7a]; }
+.status-pill.review { @apply bg-[#fdeceb] text-[#c0392b]; }
 
 /* Notification toast animations — see components/Notification */
 @keyframes notification-slide-in {
