@@ -39,6 +39,12 @@ export default function SignupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.success]);
 
+  useEffect(() => {
+    if (!state?.error) return;
+    notify({ type: "error", title: "Sign up failed", message: state.error });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
     return (
     <main className="flex min-h-screen items-center justify-center bg-paper px-4">
       <div className="w-full max-w-sm rounded-xl border border-line bg-card p-8 shadow-sm">
@@ -91,10 +97,6 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
           </div>
-
-          {state?.error && (
-            <p className="rounded-md bg-[#f3e0dd] px-3 py-2 text-xs text-stamp">{state.error}</p>
-          )}
 
           <SubmitButton />
         </form>

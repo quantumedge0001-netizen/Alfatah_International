@@ -39,6 +39,12 @@ export default function ResetPasswordPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.success]);
 
+  useEffect(() => {
+    if (!state?.error) return;
+    notify({ type: "error", title: "Couldn't update password", message: state.error });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0b0b14] px-4 py-10 sm:px-6">
       {/* ambient glow background */}
@@ -97,12 +103,6 @@ export default function ResetPasswordPage() {
                 placeholder="••••••••"
               />
             </div>
-
-            {state?.error && (
-              <p className="rounded-md border border-red-400/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
-                {state.error}
-              </p>
-            )}
 
             <SubmitButton />
           </form>
