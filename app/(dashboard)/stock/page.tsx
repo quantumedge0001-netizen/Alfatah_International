@@ -1,12 +1,27 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
+import { regionFilterFor } from "@/lib/authorization";
 
 export default async function StockPage() {
+  const profile = await requireProfile();
   const supabase = await createClient();
-  const { data: items } = await supabase
+
+  let query = supabase
     .from("stock_items")
     .select("id, item_description, condition, origin_make, model_type, size_capacity, quantity, unit_price, amount")
     .order("created_at", { ascending: false });
+
+  // regionFilterFor returns null for super_admin (no filter — sees every
+  // region), or the user's own region_id for admin/user — enforced here
+  // so this list can never show another region's data, matching the
+  // create-side check already in lib/actions/stock.ts.
+  const regionFilter = regionFilterFor(profile);
+  if (regionFilter) {
+    query = query.eq("region_id", regionFilter);
+  }
+
+  const { data: items } = await query;
 
   const totalAmount = (items ?? []).reduce((sum, r) => sum + (r.amount ?? 0), 0);
 

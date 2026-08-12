@@ -1,13 +1,28 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { requireProfile } from "@/lib/auth";
+import { regionFilterFor } from "@/lib/authorization";
 
 export default async function ImportsPage() {
+  const profile = await requireProfile();
   const supabase = await createClient();
-  const { data: imports } = await supabase
+
+  let query = supabase
     .from("imports")
     .select("id, supplier, country, quantity, total_cost, currency, import_date, products(name), regions(name)")
     .order("import_date", { ascending: false })
     .limit(50);
+
+  // regionFilterFor returns null for super_admin (no filter — sees every
+  // region), or the user's own region_id for admin/user — same rule used
+  // in lib/actions/imports.ts on create, so a region an Admin/User can't
+  // write to also never shows up in this list.
+  const regionFilter = regionFilterFor(profile);
+  if (regionFilter) {
+    query = query.eq("region_id", regionFilter);
+  }
+
+  const { data: imports } = await query;
 
   return (
     <div>

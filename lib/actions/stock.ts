@@ -3,12 +3,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { requireProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import {
+  requireAdminOrAbove,
+  requireRegionAccess,
+} from "@/lib/authorization";
 
 export async function createStockItem(
   _prevState: { error: string | null },
   formData: FormData
 ): Promise<{ error: string | null }> {
   const profile = await requireProfile();
+
+  // Stock creation is an Admin-level operation — User role is view-only
+  // for Inventory (see lib/auth/authorization.ts).
+  try {
+    requireAdminOrAbove(profile);
+  } catch {
+    return { error: "You do not have permission to add stock items." };
+  }
 
   const item_description = String(formData.get("item_description") || "").trim();
   const condition = String(formData.get("condition") || "");
@@ -28,6 +40,28 @@ export async function createStockItem(
     return { error: "Unit price is required." };
   }
 
+  // Region resolution: Admin always writes into their own region — never
+  // trust a region_id from the form for a non-super_admin, since that
+  // would let someone tamper with the request to write into another
+  // region. super_admin may create in any region; the form must supply
+  // which one via a region_id field (add a region selector to the
+  // stock/new form for super_admin users — TODO if not already present).
+  const formRegionId = formData.get("region_id");
+  const targetRegionId =
+    profile.role === "super_admin"
+      ? (formRegionId ? String(formRegionId) : null)
+      : profile.region_id;
+
+  if (profile.role === "super_admin" && !targetRegionId) {
+    return { error: "Please select a region for this stock item." };
+  }
+
+  try {
+    requireRegionAccess(profile, targetRegionId, "create");
+  } catch {
+    return { error: "You do not have access to create stock items in this region." };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.from("stock_items").insert({
@@ -38,6 +72,7 @@ export async function createStockItem(
     size_capacity: size_capacity || null,
     quantity,
     unit_price,
+    region_id: targetRegionId,
     created_by: profile.id,
   });
 
