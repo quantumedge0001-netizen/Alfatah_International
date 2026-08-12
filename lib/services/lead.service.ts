@@ -6,14 +6,35 @@ import type { Json } from "@/lib/types";
 // Every source adapter (Meta, Google Sheets, website form, manual entry...)
 // must produce this shape. No source-specific field names should leak past
 // this boundary into lead.service.ts or anything downstream of it.
+//
+// campaign/adset/ad/form/platform fields are Meta-shaped but kept optional
+// and generic enough that other sources can populate a subset (or leave
+// them null) without needing a schema change.
 export interface CanonicalLeadInput {
   name: string | null;
   phone: string | null;
   email: string | null;
   source: string; // 'meta' | 'google_sheets' | 'website' | 'manual' | ...
   external_id: string;
-  requirement: string | null;
+  requirement: string | null; // human-readable summary of form answers
   raw_payload: Record<string, unknown>;
+
+  // Attribution — nullable, only Meta populates these today.
+  campaign_id?: string | null;
+  campaign_name?: string | null;
+  adset_id?: string | null;
+  adset_name?: string | null;
+  ad_id?: string | null;
+  ad_name?: string | null;
+  form_id?: string | null;
+  form_name?: string | null;
+  platform?: string | null;
+  is_organic?: boolean | null;
+
+  // Structured form answers (question -> answer), separate from raw_payload
+  // so the dashboard can query/filter on individual answers without
+  // reaching into the full webhook payload.
+  form_answers?: Record<string, unknown>;
 }
 
 export interface ProcessLeadResult {
@@ -49,6 +70,17 @@ export async function processCanonicalLead(input: CanonicalLeadInput): Promise<P
         external_id: input.external_id,
         requirement: input.requirement,
         raw_payload: input.raw_payload as Json,
+        campaign_id: input.campaign_id ?? null,
+        campaign_name: input.campaign_name ?? null,
+        adset_id: input.adset_id ?? null,
+        adset_name: input.adset_name ?? null,
+        ad_id: input.ad_id ?? null,
+        ad_name: input.ad_name ?? null,
+        form_id: input.form_id ?? null,
+        form_name: input.form_name ?? null,
+        platform: input.platform ?? null,
+        is_organic: input.is_organic ?? null,
+        form_answers: (input.form_answers ?? {}) as Json,
       },
       { onConflict: "source,external_id" }
     )
