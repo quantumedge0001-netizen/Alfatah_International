@@ -7,6 +7,7 @@ import {
   Inbox,
   Ship,
   Boxes,
+  Warehouse,
   Landmark,
   Users,
   Building2,
@@ -43,7 +44,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         collapsed ? "w-[64px]" : "w-52"
       }`}
     >
-      {/* Toggle button — aside ke bahar hai, isay overflow-hidden wrapper ke andar mat rakhna */}
+      {/* Toggle button */}
       <button
         onClick={() => setCollapsed(!collapsed)}
         className="absolute -right-3.5 top-6 z-20 flex h-7 w-7 items-center justify-center rounded-full border border-[#58CCED]/40 bg-[#072F5F] text-[#58CCED] shadow-md shadow-black/30 transition-colors hover:bg-[#0a3d7a]"
@@ -52,7 +53,6 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         {collapsed ? <ChevronsRight size={13} /> : <ChevronsLeft size={13} />}
       </button>
 
-      {/* Poora andar ka content — yahan overflow-hidden lagaya taake text collapse ke waqt overflow na ho */}
       <div className="flex h-full flex-col overflow-hidden">
         {/* Header */}
         <div className={`mb-6 flex-shrink-0 ${collapsed ? "px-0" : "px-1.5"}`}>
@@ -86,6 +86,7 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
           <NavLink href="/leads" label="Leads" icon={Inbox} collapsed={collapsed} />
           <NavLink href="/imports" label="Import Register" icon={Ship} collapsed={collapsed} />
           <NavLink href="/inventory" label="Inventory" icon={Boxes} collapsed={collapsed} />
+          <NavLink href="/stock" label="Stock" icon={Warehouse} collapsed={collapsed} />
           <NavLink href="/sales" label="Government Sales" icon={Landmark} collapsed={collapsed} />
           <NavLink href="/private-sales" label="Private Sales" icon={Briefcase} collapsed={collapsed} />
           <NavLink href="/invoices" label="Invoice / Challan" icon={FileText} collapsed={collapsed} />
@@ -145,7 +146,6 @@ export default function Sidebar({ profile, regionName }: { profile: Profile; reg
         </div>
       </div>
 
-      {/* Thin webkit scrollbar for the nav */}
       <style jsx global>{`
         .sidebar-scroll::-webkit-scrollbar {
           width: 4px;
