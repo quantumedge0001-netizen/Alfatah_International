@@ -1,18 +1,21 @@
+import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Package, Ship, Landmark, AlertTriangle } from "lucide-react";
+import { Package, Ship, Landmark, AlertTriangle, FileText } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import SalesTrendChart from "@/components/charts/SalesTrendChart";
 import InventoryDonutChart from "@/components/charts/InventoryDonutChart";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
+  const supabaseAny = supabase as any; // invoices isn't in the generated Database type yet
 
   const [
     profile,
     { count: importsCount },
     { data: inventoryRows },
     { data: salesRows },
+    { data: invoiceRows },
   ] = await Promise.all([
     requireProfile(),
     supabase.from("imports").select("*", { count: "exact", head: true }),
@@ -21,7 +24,21 @@ export default async function DashboardPage() {
       .from("sales")
       .select("total_price, created_at")
       .order("created_at", { ascending: true }),
+    supabaseAny
+      .from("invoices")
+      .select("id, invoice_no, customer_name, customer_type, grand_total, status, invoice_date")
+      .order("invoice_date", { ascending: false }),
   ]);
+
+  const invoices = invoiceRows ?? [];
+  const totalInvoicedAmount = invoices.reduce((sum: number, r: any) => sum + Number(r.grand_total), 0);
+  const governmentInvoiced = invoices
+    .filter((r: any) => r.customer_type === "government_institution")
+    .reduce((sum: number, r: any) => sum + Number(r.grand_total), 0);
+  const privateInvoiced = invoices
+    .filter((r: any) => r.customer_type !== "government_institution")
+    .reduce((sum: number, r: any) => sum + Number(r.grand_total), 0);
+  const recentInvoices = invoices.slice(0, 5);
 
   const totalUnits = (inventoryRows ?? []).reduce((sum, r) => sum + (r.quantity_available ?? 0), 0);
   const totalSalesValue = (salesRows ?? []).reduce((sum, r) => sum + (r.total_price ?? 0), 0);
@@ -83,6 +100,13 @@ export default async function DashboardPage() {
           icon={AlertTriangle}
           warn={lowStockCount > 0}
         />
+        <KpiCard
+          label="Invoiced Amount"
+          value={`₨ ${totalInvoicedAmount.toLocaleString()}`}
+          delta={`${invoices.length} invoice${invoices.length === 1 ? "" : "s"}`}
+          icon={FileText}
+          tone="teal"
+        />
       </div>
 
       {/* Charts */}
@@ -97,6 +121,63 @@ export default async function DashboardPage() {
           <div className="mb-1 font-display text-[14px] font-semibold text-[#072F5F]">Stock Health</div>
           <div className="mb-4 text-[12px] text-muted">Inventory items by stock level</div>
           <InventoryDonutChart healthy={healthyStockCount} low={lowStockCount} />
+        </div>
+      </div>
+
+      {/* Invoices: sector split + recent list */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-xl border border-line bg-card p-5">
+          <div className="mb-1 font-display text-[14px] font-semibold text-[#072F5F]">Invoiced by Sector</div>
+          <div className="mb-4 text-[12px] text-muted">Government vs private customers</div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg bg-[#e8eef7] px-3 py-2.5">
+              <span className="text-[12.5px] font-medium text-[#072F5F]">Government</span>
+              <span className="font-mono text-[13px] font-semibold text-[#072F5F]">
+                ₨ {governmentInvoiced.toLocaleString()}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg bg-[#e6f7fc] px-3 py-2.5">
+              <span className="text-[12.5px] font-medium text-[#072F5F]">Private</span>
+              <span className="font-mono text-[13px] font-semibold text-[#072F5F]">
+                ₨ {privateInvoiced.toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-line bg-card p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="font-display text-[14px] font-semibold text-[#072F5F]">Recent Invoices</div>
+              <div className="text-[12px] text-muted">Latest invoices across all customers</div>
+            </div>
+            <Link href="/invoices" className="text-[12.5px] font-medium text-[#072F5F] hover:underline">
+              View all
+            </Link>
+          </div>
+          <table className="w-full border-collapse">
+            <tbody>
+              {recentInvoices.map((row: any) => (
+                <tr key={row.id} className="border-b border-paper text-[12.5px] last:border-0">
+                  <td className="py-2 pr-2 font-mono font-medium text-ink">
+                    <Link href={`/invoices/${row.id}`} className="hover:underline">
+                      {row.invoice_no}
+                    </Link>
+                  </td>
+                  <td className="py-2 pr-2">{row.customer_name}</td>
+                  <td className="py-2 pr-2 font-mono text-muted">₨ {Number(row.grand_total).toLocaleString()}</td>
+                  <td className="py-2 pr-2">
+                    <span className={`status-pill ${row.status}`}>{row.status}</span>
+                  </td>
+                </tr>
+              ))}
+              {recentInvoices.length === 0 && (
+                <tr>
+                  <td className="py-6 text-center text-[13px] text-muted">No invoices yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
