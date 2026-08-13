@@ -5,9 +5,17 @@ export default async function InvoicesPage() {
   const supabase = (await createClient()) as any;
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("id, invoice_no, customer_name, invoice_date, grand_total, status")
+    .select(
+      "id, invoice_no, customer_name, invoice_date, grand_total, status, invoice_items(sale_id, private_sale_id), challans(id)"
+    )
     .order("invoice_date", { ascending: false })
     .limit(50);
+
+  // An invoice is "From Sale" if any of its line items were pulled in from
+  // an existing Government/Private sale record rather than typed by hand.
+  function isFromSale(row: any) {
+    return (row.invoice_items ?? []).some((i: any) => i.sale_id || i.private_sale_id);
+  }
 
   return (
     <div>
@@ -34,6 +42,7 @@ export default async function InvoicesPage() {
               <th className="pb-2.5 pr-2">Customer</th>
               <th className="pb-2.5 pr-2">Date</th>
               <th className="pb-2.5 pr-2">Total</th>
+              <th className="pb-2.5 pr-2">Source</th>
               <th className="pb-2.5 pr-2">Status</th>
               <th className="pb-2.5 pr-2"></th>
             </tr>
@@ -50,23 +59,46 @@ export default async function InvoicesPage() {
                 <td className="py-2.5 pr-2 font-mono text-muted">{row.invoice_date}</td>
                 <td className="py-2.5 pr-2 font-mono text-muted">₨ {Number(row.grand_total).toLocaleString()}</td>
                 <td className="py-2.5 pr-2">
+                  {isFromSale(row) ? (
+                    <span className="rounded-full bg-[#e6f7fc] px-2 py-0.5 text-[10.5px] font-medium text-[#072F5F]">
+                      From Sale
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-[#eef0f4] px-2 py-0.5 text-[10.5px] font-medium text-muted">
+                      Manual
+                    </span>
+                  )}
+                </td>
+                <td className="py-2.5 pr-2">
                   <span className={`status-pill ${row.status}`}>{row.status}</span>
                 </td>
                 <td className="py-2.5 pr-2 text-right">
-                  <a
-                    href={`/api/invoices/${row.id}/pdf`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-md border border-line px-2.5 py-1 text-[11.5px] text-[#072F5F] hover:bg-[#072F5F]/[0.05]"
-                  >
-                    Download PDF
-                  </a>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <a
+                      href={`/api/invoices/${row.id}/pdf`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-md border border-line px-2.5 py-1 text-[11.5px] text-[#072F5F] hover:bg-[#072F5F]/[0.05]"
+                    >
+                      Invoice
+                    </a>
+                    {row.challans && row.challans.length > 0 && (
+                      <a
+                        href={`/api/challans/${row.challans[0].id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-md border border-line px-2.5 py-1 text-[11.5px] text-[#072F5F] hover:bg-[#072F5F]/[0.05]"
+                      >
+                        Challan
+                      </a>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
             {(!invoices || invoices.length === 0) && (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-[13px] text-muted">
+                <td colSpan={7} className="py-8 text-center text-[13px] text-muted">
                   No invoices yet. Click "+ New Invoice" to create the first one.
                 </td>
               </tr>

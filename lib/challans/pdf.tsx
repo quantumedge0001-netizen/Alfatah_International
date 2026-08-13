@@ -1,15 +1,9 @@
 import { Document, Page, View, Text, Image, StyleSheet } from "@react-pdf/renderer";
-import { LETTERHEAD_DATA_URI } from "./assets";
-import { COMPANY_INFO } from "./constants";
-import { WhatsAppIcon, EmailIcon, MapPinIcon } from "./pdfIcons";
+import { LETTERHEAD_DATA_URI } from "@/lib/invoices/assets";
+import { COMPANY_INFO } from "@/lib/invoices/constants";
+import { WhatsAppIcon, EmailIcon, MapPinIcon } from "@/lib/invoices/pdfIcons";
 import { NAVY, CYAN, TINT, LINE } from "@/lib/pdfBrand";
-import type { Invoice, InvoiceItem } from "./types";
-
-const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  draft: { bg: "#eef4fb", text: "#0a3d7a" },
-  sent: { bg: "#fff6e0", text: "#8a6d00" },
-  paid: { bg: "#e6f7fc", text: NAVY },
-};
+import type { Challan, ChallanItem } from "./types";
 
 const styles = StyleSheet.create({
   page: {
@@ -28,12 +22,8 @@ const styles = StyleSheet.create({
     marginTop: 110,
     marginBottom: 92,
     paddingHorizontal: 40,
-    // Fills the printable zone between the letterhead's header and footer
-    // graphics (792 page height - 110 top - 92 bottom) so the flexGrow
-    // spacer below has room to push the signature block down to the
-    // bottom of the page instead of it sitting right under the total —
-    // matching how a real signed letter is laid out. Short invoices get
-    // pushed to the bottom; long ones just fill the box naturally.
+    // Same "signature always near the bottom" trick as the invoice PDF —
+    // see lib/invoices/pdf.tsx for the full explanation.
     minHeight: 590,
     flexDirection: "column",
   },
@@ -44,10 +34,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 12,
+    marginBottom: 14,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontFamily: "Helvetica-Bold",
     color: NAVY,
     letterSpacing: 1,
@@ -83,21 +73,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: NAVY,
   },
-  statusBadge: {
-    marginTop: 6,
-    alignSelf: "flex-end",
-    borderRadius: 10,
-    paddingVertical: 3,
-    paddingHorizontal: 9,
-    fontSize: 8,
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  billToBox: {
-    marginBottom: 12,
-  },
-  billToLabel: {
+  sectionLabel: {
     fontSize: 8.5,
     color: "#5b6b82",
     fontFamily: "Helvetica-Bold",
@@ -105,17 +81,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 3,
   },
+  fromBlock: {
+    marginBottom: 12,
+  },
+  toBlock: {
+    marginBottom: 12,
+  },
+  bodyLine: {
+    fontSize: 9.5,
+    color: "#1a1a1a",
+  },
   customerName: {
-    fontSize: 12.5,
+    fontSize: 11.5,
     fontFamily: "Helvetica-Bold",
     color: NAVY,
     marginTop: 1,
     marginBottom: 1,
   },
-  customerAddress: {
-    fontSize: 9.5,
-    color: "#3a4a5c",
-    lineHeight: 1.3,
+  subject: {
+    fontSize: 10.5,
+    fontFamily: "Helvetica-Bold",
+    color: NAVY,
+    marginBottom: 10,
+    textDecoration: "underline",
   },
   table: {
     borderWidth: 1,
@@ -148,11 +136,12 @@ const styles = StyleSheet.create({
   rowAlt: {
     backgroundColor: "#f7f9fb",
   },
-  colDesc: { width: "34%" },
-  colUom: { width: "12%", textAlign: "center" },
-  colQty: { width: "14%", textAlign: "center" },
-  colPrice: { width: "18%", textAlign: "right" },
-  colAmount: { width: "22%", textAlign: "right" },
+  colNo: { width: "6%", textAlign: "center" },
+  colDesc: { width: "36%" },
+  colUom: { width: "10%", textAlign: "center" },
+  colQty: { width: "12%", textAlign: "center" },
+  colPrice: { width: "16%", textAlign: "right" },
+  colAmount: { width: "20%", textAlign: "right" },
   totalBar: {
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -183,18 +172,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 220,
   },
-  footerLabel: {
-    fontSize: 8.5,
-    color: "#5b6b82",
-    fontFamily: "Helvetica-Bold",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 3,
-  },
-  footerValue: {
-    fontSize: 10,
-    color: "#1a1a1a",
-  },
   signerBlock: {
     marginTop: 16,
   },
@@ -223,88 +200,72 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#3a4a5c",
   },
-  signatureLabel: {
-    fontSize: 9.5,
-    fontFamily: "Helvetica-Bold",
-    color: NAVY,
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  signatureBox: {
-    height: 32,
-    width: 240,
-  },
 });
 
 function fmt(n: number) {
   return n.toLocaleString("en-PK");
 }
 
-export default function InvoiceDocument({
-  invoice,
+export default function ChallanDocument({
+  challan,
   items,
 }: {
-  invoice: Invoice;
-  items: InvoiceItem[];
+  challan: Challan;
+  items: ChallanItem[];
 }) {
-  const status = STATUS_COLORS[invoice.status] ?? STATUS_COLORS.draft;
-
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        {/* `fixed` repeats this on every page — without it, if the invoice
-            has enough items/notes to spill onto a second page, the
-            letterhead only shows on the first page and the overflow page
-            renders with no letterhead at all. */}
         <Image src={LETTERHEAD_DATA_URI} style={styles.letterhead} fixed />
 
         <View style={styles.content}>
           <View style={styles.topRow}>
             <View>
-              <Text style={styles.title}>INVOICE</Text>
+              <Text style={styles.title}>DELIVERY CHALLAN</Text>
               <View style={styles.titleAccent} />
             </View>
             <View style={styles.metaBox}>
               <View style={styles.metaRow}>
-                <Text style={styles.metaLabel}>Invoice No</Text>
-                <Text style={styles.metaValue}>{invoice.invoice_no}</Text>
+                <Text style={styles.metaLabel}>Challan No</Text>
+                <Text style={styles.metaValue}>{challan.challan_no}</Text>
               </View>
               <View style={styles.metaRow}>
                 <Text style={styles.metaLabel}>Date</Text>
                 <Text style={styles.metaValue}>
-                  {new Date(invoice.invoice_date).toLocaleDateString("en-GB", {
+                  {new Date(challan.challan_date).toLocaleDateString("en-GB", {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
                   })}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: status.bg, color: status.text },
-                ]}
-              >
-                {invoice.status}
-              </Text>
             </View>
           </View>
 
-          <View style={styles.billToBox}>
-            <Text style={styles.billToLabel}>Invoice To</Text>
-            <Text style={styles.footerValue}>To,</Text>
-            <Text style={styles.footerValue}>The Management,</Text>
-            <Text style={styles.customerName}>{invoice.customer_name}</Text>
-            {invoice.customer_address ? (
-              <Text style={styles.customerAddress}>{invoice.customer_address}</Text>
-            ) : null}
+          <View style={styles.fromBlock}>
+            <Text style={styles.sectionLabel}>From</Text>
+            <Text style={[styles.bodyLine, { fontFamily: "Helvetica-Bold" }]}>{COMPANY_INFO.companyName}</Text>
+            <Text style={styles.bodyLine}>{COMPANY_INFO.signerName}</Text>
+            <Text style={styles.bodyLine}>{COMPANY_INFO.signerTitle}</Text>
+            <Text style={styles.bodyLine}>{COMPANY_INFO.phone}</Text>
+            <Text style={styles.bodyLine}>{COMPANY_INFO.email}</Text>
           </View>
+
+          <View style={styles.toBlock}>
+            <Text style={styles.sectionLabel}>To</Text>
+            <Text style={styles.bodyLine}>The Management,</Text>
+            <Text style={styles.customerName}>{challan.customer_name}</Text>
+            {challan.customer_address ? <Text style={styles.bodyLine}>{challan.customer_address}</Text> : null}
+          </View>
+
+          <Text style={styles.subject}>Subject: Delivery Confirmation</Text>
 
           <View style={styles.table}>
             <View style={styles.tableHeaderRow}>
-              <Text style={[styles.headerCell, styles.colDesc]}>Description</Text>
+              <Text style={[styles.headerCell, styles.colNo]}>S.No</Text>
+              <Text style={[styles.headerCell, styles.colDesc]}>Item Description</Text>
               <Text style={[styles.headerCell, styles.colUom]}>UOM</Text>
-              <Text style={[styles.headerCell, styles.colQty]}>Quantity</Text>
+              <Text style={[styles.headerCell, styles.colQty]}>Qty</Text>
               <Text style={[styles.headerCell, styles.colPrice]}>Unit Price (PKR)</Text>
               <Text style={[styles.headerCell, styles.colAmount]}>Amount</Text>
             </View>
@@ -313,6 +274,7 @@ export default function InvoiceDocument({
                 key={item.id}
                 style={[styles.tableRow, ...(index % 2 === 1 ? [styles.rowAlt] : [])]}
               >
+                <Text style={[styles.cell, styles.colNo]}>{index + 1}</Text>
                 <Text style={[styles.cell, styles.colDesc]}>{item.description}</Text>
                 <Text style={[styles.cell, styles.colUom]}>{item.uom}</Text>
                 <Text style={[styles.cell, styles.colQty]}>{item.quantity}</Text>
@@ -323,27 +285,20 @@ export default function InvoiceDocument({
           </View>
 
           <View style={styles.totalBar}>
-            <Text style={styles.totalLabel}>Grand Total</Text>
-            <Text style={styles.totalValue}>Rs. {fmt(invoice.grand_total)}/-</Text>
+            <Text style={styles.totalLabel}>Subtotal</Text>
+            <Text style={styles.totalValue}>Rs. {fmt(challan.subtotal)}/-</Text>
           </View>
 
           <View style={styles.paymentRow}>
-            <Text style={styles.footerLabel}>Payment Method</Text>
-            <Text style={styles.footerValue}>{invoice.payment_method}</Text>
+            <Text style={styles.sectionLabel}>Payment Method</Text>
+            <Text style={styles.bodyLine}>{challan.payment_method}</Text>
           </View>
-          {invoice.notes ? (
-            <>
-              <Text style={[styles.footerLabel, { marginTop: 6 }]}>Notes</Text>
-              <Text style={styles.footerValue}>{invoice.notes}</Text>
-            </>
-          ) : null}
 
           <View style={styles.spacer} />
 
           <View style={styles.signerBlock}>
-            <Text style={styles.footerValue}>Warm Regards,</Text>
+            <Text style={styles.bodyLine}>Warm Regards,</Text>
             <Text style={styles.signerName}>{COMPANY_INFO.signerName}</Text>
-            <Text style={styles.footerValue}>{COMPANY_INFO.signerTitle}</Text>
             <Text style={styles.signerCompany}>{COMPANY_INFO.companyName}</Text>
 
             <View style={styles.contactRow}>
@@ -365,9 +320,6 @@ export default function InvoiceDocument({
               <Text style={styles.contactText}>{COMPANY_INFO.address}</Text>
             </View>
           </View>
-
-          <Text style={styles.signatureLabel}>Authorized Signature &amp; Stamp:</Text>
-          <View style={styles.signatureBox} />
         </View>
       </Page>
     </Document>
