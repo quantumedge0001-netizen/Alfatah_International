@@ -3,24 +3,25 @@ import { notFound } from "next/navigation";
 import { Phone, Mail, MapPin } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import InvoiceActions from "@/components/invoices/InvoiceActions";
+import ChallanSection from "@/components/challans/ChallanSection";
 import { COMPANY_INFO } from "@/lib/invoices/constants";
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = (await createClient()) as any;
 
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("*, invoice_items(*)")
-    .eq("id", id)
-    .single();
+  const [{ data: invoice }, { data: challans }] = await Promise.all([
+    supabase.from("invoices").select("*, invoice_items(*)").eq("id", id).single(),
+    supabase.from("challans").select("*").eq("invoice_id", id).order("created_at", { ascending: false }),
+  ]);
 
   if (!invoice) notFound();
 
   const items = (invoice.invoice_items ?? []).slice().sort((a: any, b: any) => a.sort_order - b.sort_order);
+  const isFromSale = items.some((i: any) => i.sale_id || i.private_sale_id);
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-display text-xl font-semibold text-[#072F5F]">{invoice.invoice_no}</h1>
@@ -35,20 +36,43 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             rel="noreferrer"
             className="rounded-lg bg-[#072F5F] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#0a3d7a]"
           >
-            Download PDF
+            Invoice
           </a>
+          {challans && challans.length > 0 && (
+            <a
+              href={`/api/challans/${challans[0].id}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-[#072F5F] px-4 py-2 text-[13px] font-medium text-[#072F5F] hover:bg-[#072F5F]/[0.05]"
+            >
+              Challan
+            </a>
+          )}
           <Link href="/invoices" className="rounded-lg border border-line px-4 py-2 text-[13px] text-ink hover:bg-[#072F5F]/[0.05]">
             Back
           </Link>
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2">
       {/* Same visual language as the downloaded PDF — navy header, bill-to
           card, navy table header, navy total bar, signer block with icons —
           so the on-screen preview and the PDF read as the same document. */}
       <div className="overflow-hidden rounded-xl border border-line bg-card">
         <div className="flex items-center justify-between border-b border-line bg-[#072F5F]/[0.03] px-6 py-4">
-          <span className={`status-pill ${invoice.status}`}>{invoice.status}</span>
+          <div className="flex items-center gap-2">
+            <span className={`status-pill ${invoice.status}`}>{invoice.status}</span>
+            {isFromSale ? (
+              <span className="rounded-full bg-[#e6f7fc] px-2 py-0.5 text-[10.5px] font-medium text-[#072F5F]">
+                From Sale
+              </span>
+            ) : (
+              <span className="rounded-full bg-[#eef0f4] px-2 py-0.5 text-[10.5px] font-medium text-muted">
+                Manual
+              </span>
+            )}
+          </div>
           <InvoiceActions id={invoice.id} status={invoice.status} />
         </div>
 
@@ -141,6 +165,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div className="h-14 w-48 rounded-md border border-dashed border-line" />
           </div>
         </div>
+      </div>
+      </div>
+
+      <div className="lg:col-span-1">
+        <ChallanSection invoiceId={invoice.id} challans={challans ?? []} />
+      </div>
       </div>
     </div>
   );

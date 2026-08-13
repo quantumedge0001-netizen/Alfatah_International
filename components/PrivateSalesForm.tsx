@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { createPrivateSale } from "@/lib/actions/private-sales";
 
 function SubmitButton() {
@@ -23,7 +24,7 @@ export default function PrivateSalesForm({
   companies: { id: string; name: string; city: string | null }[];
   products: { id: string; name: string }[];
 }) {
-  const [state, formAction] = useFormState<{ error: string | null }, FormData>(
+  const [state, formAction] = useActionState<{ error: string | null }, FormData>(
     createPrivateSale,
     { error: null }
   );
